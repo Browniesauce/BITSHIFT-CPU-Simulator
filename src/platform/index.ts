@@ -38,3 +38,5 @@ export type {
   Word,
 } from './types';
 export { validateMemoryRange } from './memory-range';
+export { createArchitectureRegistry } from './registry';
+export type { ArchitectureRegistry } from './registry';

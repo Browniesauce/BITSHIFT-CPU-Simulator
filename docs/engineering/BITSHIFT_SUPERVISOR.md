@@ -10,13 +10,34 @@ This guide says how supervision works. It does not restate the architecture. Whe
 
 ## 1. Roles
 
-| Role                              | Owns                                                                                                                                                           | Does not do                                                                               |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| **Supervisor** (Fable)            | Slice plans, acceptance criteria, implementation prompts, code and evidence review, verdicts, the progress record, escalation of decisions                     | Write feature code. Approve decisions that belong to the product owner. Expand scope.     |
-| **Implementation agent** (Sonnet) | Code and tests for one assigned slice, validation commands, the implementation report (DEFINITION_OF_DONE §6), fixing review findings                          | Change contracts, add dependencies, start the next slice, resolve ambiguities by guessing |
-| **Product owner**                 | Approval of decisions and contract changes, product trade-offs, scope changes, final acceptance of stages and phases, commits and host-side environment checks | —                                                                                         |
+| Role                                   | Owns                                                                                                                                                                                                                                                              | Does not do                                                                                                                                                                     |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Engineering Supervisor** (Fable 5.2) | Architecture review, slice plans, acceptance criteria, implementation prompts, independent audit of code and test evidence, verdicts, the progress record, risk and inconsistency reports, escalation of decisions                                                | Implement features or write application code. Modify source, test or contract files. Act as the coding agent. Approve decisions that belong to the product owner. Expand scope. |
+| **Lead Executor** (Sonnet 5.5)         | All implementation for an assigned slice: breaks it into tasks, delegates bounded tasks to sub-agents, reviews and integrates their output, resolves conflicts and defects, runs the validation commands, fixes review findings, writes the implementation report | Change contracts, add dependencies, start the next slice, resolve ambiguities by guessing, expand scope                                                                         |
+| **Specialist Sub-agent** (Haiku 5.5)   | Bounded tasks delegated by the lead executor: documentation, contract analysis, boilerplate, test generation, lightweight coding, independent reviews. Reports findings and completed work to the lead executor                                                   | Redefine architecture, expand scope, report directly as the final implementer                                                                                                   |
+| **Product Owner** (the user)           | Approval of architecture, scope and decisions; approval of contract changes; product trade-offs; reviewing important outcomes; final acceptance of stages and phases; commits and host-side environment checks                                                    | —                                                                                                                                                                               |
 
-The product owner's access to the supervising model is limited. Each supervisor session should end with work the implementation agent can execute without the supervisor: a ready prompt, a verdict with exact corrections, or a decision list with recommendations.
+The product owner's access to the supervising model is limited. Each supervisor session should end with work the lead executor can execute without the supervisor: a ready prompt, a verdict with exact corrections, or a decision list with recommendations.
+
+### 1.1 Delegation Rules
+
+- Sonnet is always the lead implementation agent. Fable is never assigned implementation or coding work, including fixes.
+- Sub-agents are used where they are available and genuinely useful. A report states what was actually delegated. Do not claim a delegation that did not happen.
+- The lead executor reviews every delegated contribution before integrating it.
+- Sub-agents do not redefine architecture, contracts or acceptance criteria, and do not widen their assignment.
+- Existing architecture decisions, contracts, acceptance criteria and phase boundaries stay authoritative for every role.
+
+### 1.2 Standard Workflow
+
+Each slice (§3) follows this sequence:
+
+1. **Supervisor reviews the upcoming slice** and prepares the assignment: plan, acceptance criteria and self-contained prompt (§3.1, §3.2). Blocked decisions are checked first (§3.1).
+2. **Lead executor analyses the assignment** and splits it into sub-tasks, naming the sub-tasks suitable for delegation.
+3. **Lead executor delegates** bounded sub-tasks to Haiku and other available sub-agents, and reviews each contribution before use.
+4. **Lead executor implements, integrates and validates** the complete slice, including the five validation commands (§3.3).
+5. **Lead executor reports** in the conversation, not as a new file (§8): the DEFINITION_OF_DONE §6 report, plus the delegated tasks (what, to whom, result, how reviewed) and unresolved issues.
+6. **Supervisor audits independently** from the diff and test evidence, and gives a verdict (§3.3 to §3.5). Evidence is re-run, not trusted from the report.
+7. **Product owner accepts or requests corrections.** Corrections return to the lead executor (§4). Acceptance is recorded per §3.6.
 
 ---
 
@@ -49,7 +70,7 @@ The implementation prompt is self-contained. It includes:
 - signatures or type names where the contract fixes them;
 - acceptance criteria, each one testable;
 - the stop rule: if a contract is ambiguous, contradictory or does not compose, stop and report it. Do not guess and do not edit the contract;
-- the report format (DEFINITION_OF_DONE §6) and the five validation commands.
+- the report format (DEFINITION_OF_DONE §6), with the delegated tasks added (§1.2 step 5), and the five validation commands.
 
 Never delegate a subsystem ("implement the controller"). Delegate a behaviour with a boundary.
 
@@ -80,7 +101,7 @@ Look specifically for:
 | ---------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
 | **APPROVED**                 | Meets every acceptance criterion and standard                                                    | Product owner commits; next slice may start      |
 | **APPROVED WITH FOLLOW-UPS** | Acceptable now; listed items are non-blocking and each has an owner slice                        | Commit; follow-ups enter the status table        |
-| **CHANGES REQUIRED**         | A criterion, contract rule or standard is not met                                                | Implementation agent fixes within the same slice |
+| **CHANGES REQUIRED**         | A criterion, contract rule or standard is not met                                                | Lead executor fixes within the same slice        |
 | **BLOCKED**                  | Cannot be completed correctly without a product-owner decision or a prerequisite that is missing | Escalate with the trade-off and a recommendation |
 
 A verdict states its evidence: the commands run and their results, and the files read.
@@ -100,7 +121,7 @@ Each approved slice is committed on its own before the next slice starts, so tha
 3. Re-review covers the changed lines and a fresh run of the five commands.
 4. If the same finding survives two fix rounds, the slice or its prompt is wrong. Re-cut the slice or rewrite the prompt rather than issuing a third round.
 5. If a finding reveals a contract defect, the verdict is BLOCKED for that behaviour. Record a register proposal and continue with work that does not depend on it.
-6. The supervisor does not repair implementation code. Corrections go back to the implementation agent, so that the review stays independent.
+6. The supervisor does not repair implementation code. Corrections go back to the lead executor, so that the review stays independent.
 
 ---
 
@@ -139,7 +160,7 @@ These are the points a review must never let through. Each one cites its source;
 
 ### 6.1 Disagreements
 
-- **Implementation agent against a prompt or contract:** it stops and reports the conflict with the document and section. It does not implement its preferred reading. The supervisor either corrects the prompt or escalates.
+- **Lead executor or sub-agent against a prompt or contract:** it stops and reports the conflict with the document and section. It does not implement its preferred reading. The supervisor either corrects the prompt or escalates.
 - **Supervisor against a contract:** the contract stands until the product owner amends it. The supervisor writes the evidence, the options and a recommendation, and gates only the slices that depend on the answer.
 - **Supervisor against the product owner:** the supervisor states the risk once, with evidence. The product owner decides. The decision is recorded and followed.
 - **Two documents against each other:** report both statements. Never pick one silently (CLAUDE.md §11).
@@ -167,7 +188,7 @@ Every slice also inherits DEFINITION_OF_DONE §2 and §3. Do not repeat them in 
 - **Slice status:** the table at the end of the current phase's execution plan. One row per slice.
 - **Decisions:** the decision register and its change log.
 - **Stage completion:** `/audit-stage <n>` and the stage's acceptance criteria in the roadmap (DEFINITION_OF_DONE §4).
-- **Nothing else.** No per-slice report files, no status documents, no duplicated summaries.
+- **Nothing else.** No per-slice report files, no status documents, no duplicated summaries. The implementation report (§1.2 step 5) is delivered in the conversation and recorded here only through the status table.
 
 ---
 

@@ -22,9 +22,11 @@ Work is organised as **Phase → Stage → Slice → Task** (`docs/engineering/D
 2. Read the contracts and architecture documents that the stage touches, before changing anything. Name them in the report.
 3. Check the decision register for every open item the work depends on. An item marked **Open**, **Proposed** or **Deferred** is not treated as approved.
 4. Implement one slice at a time. Each acceptance criterion gets a test (`docs/engineering/TEST_STRATEGY.md`).
-5. Finish with the implementation report (`DEFINITION_OF_DONE.md` §6).
+5. Finish with the implementation report (`DEFINITION_OF_DONE.md` §6), including any delegated tasks (§10).
 
 **Do not implement future stages early.** If a task needs work from a later stage, stop and report the dependency.
+
+**Agent roles.** The Engineering Supervisor (Fable 5.2) plans, reviews and audits, and never writes code. The Lead Executor (Sonnet 5.5) owns all implementation and may delegate bounded tasks to the Specialist Sub-agent (Haiku 5.5), reviewing each one before integration. The product owner approves decisions and gives final acceptance. Full hierarchy and the seven-step workflow: `docs/engineering/BITSHIFT_SUPERVISOR.md` §1 and §1.2. The rules in this file apply to every agent, including sub-agents.
 
 Supervision, review verdicts and the slice-by-slice plan: `docs/engineering/BITSHIFT_SUPERVISOR.md` and `docs/engineering/PHASE_1_EXECUTION_PLAN.md`. Each slice is gated by the decisions listed in the plan, section 2.
 
@@ -109,6 +111,8 @@ After each task or slice, report (`DEFINITION_OF_DONE.md` §6):
 4. Validation commands run and their results. Anything not run is reported as not run.
 5. Decisions, labelled approved, proposed or open, with register IDs.
 6. Unresolved issues and the next step.
+
+If any work was delegated, the report also lists each delegated task, the sub-agent that did it, how the lead executor reviewed it, and the result. If nothing was delegated, it says so. Do not claim a delegation that did not happen (`BITSHIFT_SUPERVISOR.md` §1.1, §1.2).
 
 Do not describe anything as passing unless it was run and seen to pass.
 

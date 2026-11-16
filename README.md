@@ -84,4 +84,5 @@ Documentation is the source of truth.
 ## Contributing
 
 - Read [CLAUDE.md](CLAUDE.md) and the [coding standards](docs/engineering/CODING_STANDARDS.md).
+- AI-assisted development follows the agent hierarchy and standard workflow in the [supervisor guide](docs/engineering/BITSHIFT_SUPERVISOR.md) (§1 and §1.2).
 - Changes to architecture or contracts go through the decision register first.

@@ -13,6 +13,7 @@ This folder holds the shared Claude Code setup for the project.
 ## Deliberately Not Included
 
 - No hooks, custom agents or permission rules. Add them only when a concrete need appears, and record the reason in the decision register.
+- The agent roles (Engineering Supervisor, Lead Executor, Specialist Sub-agent) are documented in [BITSHIFT_SUPERVISOR.md](../docs/engineering/BITSHIFT_SUPERVISOR.md) §1. They are working roles, not custom agent definitions in this folder.
 - `settings.local.json` is personal and git-ignored.
 
 ## Using the Commands
