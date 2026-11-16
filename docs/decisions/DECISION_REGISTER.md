@@ -22,7 +22,8 @@ A proposal becomes **Approved** only when the product owner says so. Record the 
 | Phase 3 (assembler)      | DR-010, DR-012, DR-019, DR-020                                    |
 | Phase 4 (visualization)  | DR-011, DR-023, DR-032                                            |
 | Phase 5 (workbench)      | DR-006, DR-029, DR-030, DR-034, DR-038                            |
-| Phase 6 (release)        | DR-031, DR-037, DR-042, DR-044                                    |
+| Phase 6 (release)        | DR-031, DR-037, DR-042, DR-044, DR-047, DR-052                    |
+| Phases 4–5 (product UX)  | DR-045, DR-046, DR-048, DR-049, DR-050, DR-051                    |
 
 ---
 
@@ -115,20 +116,34 @@ A proposal becomes **Approved** only when the product owner says so. Record the 
 | DR-039 | Approval of the technology stack as a whole. CLAUDE.md refers to an "approved" stack; approval is still pending.                                                 | Approve TECHNOLOGY_STACK §1                                 | Open   |
 | DR-042 | Hosting target for the static release build.                                                                                                                     | Not chosen; must be static                                  | Open   |
 
+### C4. Product Questions (Stage 0.1)
+
+| ID     | Question                                                                                                 | Proposal (for review)                                                           | Status |
+| ------ | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------ |
+| DR-045 | Include instruction explanations (MVP-022) in v1.0? They are not mapped to a roadmap stage.              | Yes, one generated line per instruction; add to Stage 5.4                       | Open   |
+| DR-046 | Speed control form (MVP-014): presets or continuous slider?                                              | Presets (Slow, Normal, Fast) plus animation off                                 | Open   |
+| DR-047 | Number of example programs in v1.0 (MVP-004).                                                            | 8, at least one per instruction group                                           | Open   |
+| DR-048 | Should unsaved editor text persist between visits in the same browser (MVP-001)?                         | Yes, browser-local only; no accounts or server                                  | Open   |
+| DR-049 | Accessibility baseline for the workbench.                                                                | WCAG 2.1 AA contrast; all controls keyboard-operable                            | Open   |
+| DR-050 | Learner assumptions: English-only interface; undergraduate level; no prior assembly knowledge.           | Confirm (PRODUCT_SPEC AS-02, §3)                                                | Open   |
+| DR-051 | Which control signals are shown (MVP-019): named signals from the micro-operation model, not gate-level. | Named signals only                                                              | Open   |
+| DR-052 | Learning measure S-8: number of learners and pass threshold for the Phase 6 user test.                   | At least 5 learners; 4 of 5 complete journey unaided and answer LO-01 and LO-02 | Open   |
+
 ---
 
 ## Summary
 
-| Category        | Count | Notes                                                   |
-| --------------- | ----- | ------------------------------------------------------- |
-| A (established) | 14    | Do not change without the product owner                 |
-| B (proposed)    | 13    | Written into the documents; not final                   |
-| C (unresolved)  | 31    | Includes ISA, platform, assembler and process questions |
+| Category        | Count | Notes                                                            |
+| --------------- | ----- | ---------------------------------------------------------------- |
+| A (established) | 14    | Do not change without the product owner                          |
+| B (proposed)    | 13    | Written into the documents; not final                            |
+| C (unresolved)  | 39    | Includes ISA, platform, assembler, process and product questions |
 
 Each ID appears in exactly one table.
 
 ## Change Log
 
-| Date       | Change                                                 |
-| ---------- | ------------------------------------------------------ |
-| 2026-11-16 | Initial register created in Phase 0. No item approved. |
+| Date       | Change                                                                   |
+| ---------- | ------------------------------------------------------------------------ |
+| 2026-11-16 | Initial register created in Phase 0. No item approved.                   |
+| 2026-11-16 | Stage 0.1: added DR-045 to DR-052 (product questions). Nothing approved. |

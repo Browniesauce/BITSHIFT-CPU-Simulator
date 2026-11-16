@@ -272,7 +272,7 @@ This roadmap is a sequence of stages, not a task list. Slices are suggested grou
 **Stages:** 5 (5.1–5.5)
 **Expected outcomes:** A usable application with all v1 panels, controls and debugging.
 **Dependencies:** Phases 3 and 4.
-**Exit criteria:** Journeys J-1 to J-6 in PRODUCT_SPEC can be completed in the browser.
+**Exit criteria:** Journey steps 1–10 in PRODUCT_SPEC §5 can be completed in the browser.
 
 ### Stage 5.1 — Workbench Layout & Navigation
 
@@ -345,7 +345,7 @@ This roadmap is a sequence of stages, not a task list. Slices are suggested grou
 - **Suggested slices:** (1) assemble-run-inspect tests; (2) journey smoke tests; (3) regression set.
 - **Dependencies:** 6.1.
 - **Deliverables:** `tests/integration/` suite.
-- **Acceptance criteria:** Journeys J-1 to J-6 pass; integration suite is deterministic.
+- **Acceptance criteria:** Journey steps 1–10 of PRODUCT_SPEC §5 pass; integration suite is deterministic.
 
 ### Stage 6.3 — Cross-Platform & Browser Verification
 
