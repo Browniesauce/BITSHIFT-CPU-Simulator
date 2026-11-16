@@ -26,6 +26,8 @@ Work is organised as **Phase → Stage → Slice → Task** (`docs/engineering/D
 
 **Do not implement future stages early.** If a task needs work from a later stage, stop and report the dependency.
 
+Supervision, review verdicts and the slice-by-slice plan: `docs/engineering/BITSHIFT_SUPERVISOR.md` and `docs/engineering/PHASE_1_EXECUTION_PLAN.md`. Each slice is gated by the decisions listed in the plan, section 2.
+
 ## 4. Approved Decisions That Shape the Code
 
 Authoritative list: `docs/decisions/DECISION_REGISTER.md`. The main ones:
@@ -135,7 +137,7 @@ Full list: `docs/product/MVP_SCOPE.md` §3.
 
 ## 13. Stack Status
 
-The technology stack is **proposed**; its approval is pending (DR-039). The approved items are: no state library (DR-054), CSS-first animation (DR-055), ESLint for linting (DR-021), and the Dev Container with Node 24 and pnpm 10 (DR-041). Deferred: Motion (DR-064) and Tailwind (DR-065). Current stack and the dependency plan: `docs/architecture/TECHNOLOGY_STACK.md`.
+The installed technology stack is **approved** (DR-039): React, TypeScript, Vite, Vitest, ESLint (DR-021), Prettier, pnpm 10 and Node 24 in the Dev Container (DR-041), with no state library (DR-054) and CSS-first animation (DR-055). Do not introduce Zustand, Redux, Tailwind, Motion or additional infrastructure. Deferred: Motion (DR-064) and Tailwind (DR-065). Current stack and the dependency plan: `docs/architecture/TECHNOLOGY_STACK.md`.
 
 ## 14. Slash Commands
 

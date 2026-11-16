@@ -1,6 +1,6 @@
 # BITSHIFT — Technology Stack
 
-**Status:** Stage 0.2, reconciled after product-owner review. The stack as a whole has **not** been approved (DR-039, open). Individual decisions are recorded in [DECISION_REGISTER.md](../decisions/DECISION_REGISTER.md): DR-054 (Zustand not adopted) and DR-055 (CSS-first animation) are **Approved**; DR-064 (Motion) and DR-065 (Tailwind) are **Deferred**. Packages marked "installed" are Phase 0 tooling only.
+**Status:** Stage 0.2, reconciled after product-owner review. The installed stack is **approved** (DR-039): React, TypeScript, Vite, Node.js 24, pnpm 10, Vitest, ESLint and Prettier. No further package or infrastructure is introduced without its own decision. Individual decisions are recorded in [DECISION_REGISTER.md](../decisions/DECISION_REGISTER.md): DR-054 (Zustand not adopted) and DR-055 (CSS-first animation) are **Approved**; DR-064 (Motion) and DR-065 (Tailwind) are **Deferred**. Packages marked "installed" are Phase 0 tooling only.
 **Related:** [SYSTEM_ARCHITECTURE.md](SYSTEM_ARCHITECTURE.md), [SIMULATION_PLATFORM.md](SIMULATION_PLATFORM.md), [DECISION_REGISTER.md](../decisions/DECISION_REGISTER.md)
 
 ---
@@ -133,7 +133,7 @@ Each entry gives the responsibility, why it fits, the alternatives considered, a
 | Animation: CSS first | Start with CSS and SVG               | **Approved**                                                                 | DR-055   |
 | Motion for React     | Adopt only if needed                 | **Deferred** until a concrete requirement appears                            | DR-064   |
 | Tailwind CSS         | Keep as proposed; confirm in Phase 4 | **Deferred** to the frontend implementation stage; not approved, not removed | DR-065   |
-| Whole stack          | Proposed                             | **Open** (approval pending)                                                  | DR-039   |
+| Whole stack          | Proposed                             | **Approved** (the installed stack; nothing further introduced)               | DR-039   |
 
 No new dependency is proposed in Stage 0.2. Approving DR-054 and DR-055 removes one planned dependency (Zustand) and makes another conditional (Motion).
 
