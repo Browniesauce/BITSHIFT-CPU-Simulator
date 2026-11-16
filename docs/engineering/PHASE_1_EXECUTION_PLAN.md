@@ -1,9 +1,9 @@
 # BITSHIFT — Phase 1 Execution Plan: Simulation Platform Backbone
 
-**Status:** Revised 2026-11-16 after the product owner's review. Stage structure approved (DR-073). **Slice 1.1-a is ready to delegate.** Other slices start when the decisions that gate them (section 2) are approved. No Phase 1 code exists yet.
+**Status:** Revised 2026-11-16 after the product owner's decisions on the readiness review. **Every Phase 1 decision is now made; no slice is gated.** Done and approved: 1.1-a, 1.1-b, 1.3-a, 1.3-b, 1.3-d. Next: Batch 2 (Appendix A).
 **Related:** [PHASE_1_READINESS_REVIEW.md](PHASE_1_READINESS_REVIEW.md) (analysis behind this plan), [BITSHIFT_SUPERVISOR.md](BITSHIFT_SUPERVISOR.md), [DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md), [MODULE_CONTRACTS.md](../contracts/MODULE_CONTRACTS.md), [DATA_CONTRACTS.md](../contracts/DATA_CONTRACTS.md), [EVENT_MODEL.md](../contracts/EVENT_MODEL.md), [SIMULATION_PLATFORM.md](../architecture/SIMULATION_PLATFORM.md), [TEST_STRATEGY.md](TEST_STRATEGY.md), [DECISION_REGISTER.md](../decisions/DECISION_REGISTER.md)
 
-This plan cuts Phase 1 into 16 slices. It does not restate the contracts. Each slice names the contract sections that govern it.
+This plan cuts Phase 1 into 17 slices. It does not restate the contracts. Each slice names the contract sections that govern it.
 
 ---
 
@@ -24,41 +24,49 @@ This plan cuts Phase 1 into 16 slices. It does not restate the contracts. Each s
 
 ---
 
-## 2. Decisions and What They Gate
+## 2. Decisions and Contract Amendments
 
-### 2.1 Approved
+### 2.1 Decisions (all recorded in the register)
 
-| ID     | Decision                                                                                        | Applied in                                                           |
-| ------ | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| DR-039 | The installed stack is approved. Nothing further is introduced.                                 | Whole phase. No slice adds a dependency.                             |
-| DR-073 | Five stages, as in section 3. Slice order may be adjusted for fixture and testing dependencies. | Section 3 and section 6                                              |
-| DR-075 | The platform `fault` event takes the next free sequence in its cycle.                           | Slice 1.4-c, with the EVENT_MODEL §2 sentence                        |
-| DR-076 | A breakpoint stop moves the controller from `running` to `paused`. It is never a fault.         | Slice 1.4-e, with the SIMULATION_PLATFORM and MODULE_CONTRACTS lines |
+| ID       | Decision                                                                                                                                                                                                                            | Slices it governs                                   |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| DR-039   | The installed stack is approved. Nothing further is introduced.                                                                                                                                                                     | All                                                 |
+| DR-073   | Five stages, as in section 3. Slice order may be adjusted for fixture and testing dependencies.                                                                                                                                     | All                                                 |
+| DR-074   | Cycle-atomic commit. The platform composes instruction steps and batches from `stepClock()`. `CpuInstance.stepInstruction()` is removed. No instruction-level rollback.                                                             | 1.2-b, 1.5-a, 1.4-b, 1.4-c                          |
+| DR-075   | The platform `fault` event takes the next free sequence in its cycle.                                                                                                                                                               | 1.4-c                                               |
+| DR-076   | A breakpoint stop moves the controller from `running` to `paused`. It is never a fault.                                                                                                                                             | 1.4-e                                               |
+| DR-027   | Breakpoints are checked at instruction boundaries during a run only. A step reports `breakpointHit` only when it completed at least one cycle, ended on an instruction boundary, and the program counter is in the set.             | 1.4-e                                               |
+| DR-077 a | `load` and `reset` are always allowed with no program. `stepClock`, `stepInstruction` and `beginRun` return `PLT-NO-PROGRAM`. `runBatch` and `endRun` return `PLT-NOT-RUNNING`.                                                     | 1.4-a, 1.4-b, 1.4-d                                 |
+| DR-077 b | The `nextState` table in section 7.                                                                                                                                                                                                 | 1.2-a                                               |
+| DR-077 c | Update reason: `fault`, else `halt`, else `breakpoint` (batches only), else the request's own reason.                                                                                                                               | 1.4-a to 1.4-e                                      |
+| DR-077 d | Any architecture exception gives `PLT-INTERNAL` and an `Ok` result with a `fault` update. `reset` and `load` both replace an unreliable instance. If replacement also throws, the controller stays `faulted`.                       | 1.2-b, 1.4-a, 1.4-c                                 |
+| DR-077 e | `runBatch(maxCycles)` needs a positive integer, else `PLT-ARGUMENT`. The argument is checked before the lifecycle state.                                                                                                            | 1.4-d                                               |
+| DR-077 f | `StateChange.target` for memory is `memory[<decimal address>]`, no padding.                                                                                                                                                         | 1.3-c                                               |
+| DR-077 g | The platform never sets `InstructionRecord.explanation` and never calls `explainInstruction`.                                                                                                                                       | 1.3-c, 1.4-b                                        |
+| DR-077 h | Listeners are called in subscription order after the state is committed. A listener exception is not caught, reaches the caller, and never faults the CPU. A state-changing controller call made from inside a notification throws. | 1.4-a                                               |
+| DR-078 b | At most one register with role `'output'` and at most one with role `'program-counter'`, else `ARCH-INVALID-DESCRIPTOR`.                                                                                                            | 1.1-c, 1.4-b                                        |
+| DR-079   | Confirmed readings: every `RegisterDefinition.bits` is a positive integer (registry check); an empty registry is valid; payloads are frozen in place; `BreakpointSet` does not validate the address width.                          | 1.1-c (first item); the rest already match the code |
 
-### 2.2 Pending product-owner approval
+**Deferred, not in Phase 1:** DR-078 a (`breakpoints()` accessor, Phase 5). DR-078 c (typing of `details`, Phase 2, in the `unknown` form). **Open, gating nothing in Phase 1:** DR-022, DR-024.
 
-Detail for each is in the readiness review. A slice does not start while a decision in its "Needs" column (section 5) is pending.
+### 2.2 Contract amendments owed
 
-| ID       | Subject                                                                                               | Gates                                          |
-| -------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| DR-074   | Platform composes instruction steps from clock steps; atomicity is per clock cycle (review §2)        | 1.2-b, 1.5-a, 1.4-b, 1.4-c                     |
-| DR-077 a | Requests with no program loaded                                                                       | 1.4-a                                          |
-| DR-077 b | Full `nextState` table (section 7)                                                                    | 1.2-a                                          |
-| DR-077 c | Update-reason precedence                                                                              | 1.4-a, 1.4-d                                   |
-| DR-077 d | Exceptions outside a step; recovery                                                                   | 1.2-b, 1.4-a, 1.4-c                            |
-| DR-077 e | `runBatch` argument                                                                                   | 1.4-d                                          |
-| DR-077 f | `StateChange.target` format for memory                                                                | 1.3-c                                          |
-| DR-077 g | The platform does not set `InstructionRecord.explanation`                                             | 1.3-c                                          |
-| DR-078 a | `breakpoints()` accessor (optional for Phase 1)                                                       | Nothing. Added in 1.4-e if approved.           |
-| DR-078 b | At most one `'output'` and one `'program-counter'` register                                           | 1.4-b. Added to 1.1-b if approved before then. |
-| DR-078 c | Typing of `details` (not needed in Phase 1)                                                           | Nothing in Phase 1. Decide before Phase 2.     |
-| DR-027   | Confirm the breakpoint rule for steps, as reconciled with DR-076                                      | 1.4-e                                          |
-| Q-1      | Listener behaviour: a listener that throws, or calls the controller during a notification (review §4) | 1.4-a                                          |
-| Roadmap  | The minimal DEVELOPMENT_ROADMAP correction for DR-073 (review §1)                                     | Nothing. Documentation only.                   |
+The approved decisions are not yet in the contract documents. Each amendment is written by the slice that implements it, in the same change as the code (CLAUDE.md §6). The lead implementation agent writes contract text; sub-agents do not. Exact wording: PHASE_1_READINESS_REVIEW §1 (DR-075, DR-076, DR-027), §2.6 (DR-074), §3 (DR-077, DR-078 b) and §4 (DR-077 h).
 
-DR-022 and DR-024 stay open and gate nothing in Phase 1. DR-036 (TypeScript 5.9.x) needs no change for Phase 1.
+| Decision         | Document and section                                                                                                                                                                                                                                                                                           | Slice           |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
+| DR-074           | MODULE_CONTRACTS §3.2 (remove `stepInstruction()`; rule 1 also leaves `readState()` unchanged). DATA_CONTRACTS §5 invariants 1 and 2. SIMULATION_PLATFORM §2.1 rule 1 and table. CPU_ARCHITECTURE_STRATEGY §3, §4.1, §4.2. SYSTEM_ARCHITECTURE §8.2. TEST_STRATEGY CYC-03 and CYC-05. `src/platform/types.ts`. | Batch 2, step 0 |
+| DR-074           | MODULE_CONTRACTS §2.4.1, §2.4.3, §2.4.5 (the controller composes from clock steps; earlier cycles stay counted)                                                                                                                                                                                                | 1.4-b, 1.4-c    |
+| DR-078 b, DR-079 | DATA_CONTRACTS §3.2 validation list (register `bits`; role uniqueness). MODULE_CONTRACTS §2.1 (an empty list is valid).                                                                                                                                                                                        | 1.1-c           |
+| DR-077 b         | MODULE_CONTRACTS §2.2 (the full table). SIMULATION_PLATFORM §3.1 (`fault` arrows from every state).                                                                                                                                                                                                            | 1.2-a           |
+| DR-077 f, g      | EVENT_MODEL §10 (target format; the platform does not set `explanation`)                                                                                                                                                                                                                                       | 1.3-c           |
+| DR-077 a, c, h   | MODULE_CONTRACTS §2.4.2 and §2.4.6. SIMULATION_PLATFORM §3.2. DATA_CONTRACTS §7.                                                                                                                                                                                                                               | 1.4-a           |
+| DR-075, DR-077 d | EVENT_MODEL §2 fault paragraph. MODULE_CONTRACTS §2.4.5.                                                                                                                                                                                                                                                       | 1.4-c           |
+| DR-077 e         | MODULE_CONTRACTS §2.4 (`runBatch` comment and §2.4.1 row)                                                                                                                                                                                                                                                      | 1.4-d           |
+| DR-076, DR-027   | SIMULATION_PLATFORM §3.1 and §6. MODULE_CONTRACTS §2.4.1 and §2.4.4.                                                                                                                                                                                                                                           | 1.4-e           |
+| DR-079           | EVENT_MODEL §7 (payloads frozen in place). MODULE_CONTRACTS §2.8 (width not validated).                                                                                                                                                                                                                        | 1.4-e           |
 
-**Can run today with no further approval:** 1.1-a, 1.1-b, 1.3-a, 1.3-b, 1.3-d.
+Until a row is done, the contract and the register disagree on that point, and **the register wins**.
 
 ---
 
@@ -66,7 +74,7 @@ DR-022 and DR-024 stay open and gate nothing in Phase 1. DR-036 (TypeScript 5.9.
 
 | Stage                                   | Content                                                                    | Slices         |
 | --------------------------------------- | -------------------------------------------------------------------------- | -------------- |
-| 1.1 Architecture Registry               | Shared primitives and contract types; registry and descriptor validation   | 1.1-a, 1.1-b   |
+| 1.1 Architecture Registry               | Shared primitives and contract types; registry and descriptor validation   | 1.1-a to 1.1-c |
 | 1.2 CPU Lifecycle & Instance Management | Lifecycle transition function; the instance guard (exception boundary)     | 1.2-a, 1.2-b   |
 | 1.3 State & Event System                | Snapshots, event stamping, history and instruction records, breakpoint set | 1.3-a to 1.3-d |
 | 1.4 Execution Controller                | The controller, one behaviour per slice                                    | 1.4-a to 1.4-e |
@@ -109,16 +117,17 @@ Unit tests may import a platform module file directly. Code outside `src/platfor
 
 ## 5. Stages and Slices
 
-Every slice also meets DEFINITION_OF_DONE §2 and §3. Catalogue IDs refer to TEST_STRATEGY §5. "Needs" lists earlier slices and the pending decisions from section 2.2. Each slice gets its own self-contained prompt, written by the supervisor when the slice before it is approved. The prompt for 1.1-a is Appendix A.
+Every slice also meets DEFINITION_OF_DONE §2 and §3. Catalogue IDs refer to TEST_STRATEGY §5. "Needs" lists earlier slices and the decisions (section 2.1, all approved) that govern the slice. Each slice gets its own self-contained prompt, written by the supervisor when the slice before it is approved. The prompt for 1.1-a is Appendix A.
 
 ### Stage 1.1 — Architecture Registry
 
 **Purpose.** Give the platform its vocabulary and its first module.
 
-| Slice | Builds                                                                       | Needs | Contract                                                          | Acceptance criteria                                                                                                                                                                                                                                                                                                                                 | Catalogue                                       |
-| ----- | ---------------------------------------------------------------------------- | ----- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| 1.1-a | `result.ts`, `types.ts`, `memory-range.ts`, `index.ts`                       | —     | DATA_CONTRACTS §2–§10; EVENT_MODEL §3.2, §10; MODULE_CONTRACTS §3 | Appendix A.                                                                                                                                                                                                                                                                                                                                         | CYC-09 (type part); ERR-01 (`PLT-MEMORY-RANGE`) |
-| 1.1-b | `registry.ts`: `createArchitectureRegistry`, `lookup`, descriptor validation | 1.1-a | MODULE_CONTRACTS §2.1; DATA_CONTRACTS §3.1, §3.2                  | Each validation rule in DATA_CONTRACTS §3.2 rejects with `ARCH-INVALID-DESCRIPTOR`, one test per rule. Duplicate identifiers give `ARCH-DUPLICATE-ID`. Unknown lookup gives `ARCH-UNKNOWN-ID`. `architectures` keeps registration order and is frozen. The input list is not mutated. Two valid entries each resolve by their `isa.architectureId`. | ERR-08; ERR-01 (`ARCH-` codes)                  |
+| Slice | Builds                                                                       | Needs                   | Contract                                                          | Acceptance criteria                                                                                                                                                                                                                                                                                                                                 | Catalogue                                       |
+| ----- | ---------------------------------------------------------------------------- | ----------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| 1.1-a | `result.ts`, `types.ts`, `memory-range.ts`, `index.ts`                       | —                       | DATA_CONTRACTS §2–§10; EVENT_MODEL §3.2, §10; MODULE_CONTRACTS §3 | Appendix A.                                                                                                                                                                                                                                                                                                                                         | CYC-09 (type part); ERR-01 (`PLT-MEMORY-RANGE`) |
+| 1.1-b | `registry.ts`: `createArchitectureRegistry`, `lookup`, descriptor validation | 1.1-a                   | MODULE_CONTRACTS §2.1; DATA_CONTRACTS §3.1, §3.2                  | Each validation rule in DATA_CONTRACTS §3.2 rejects with `ARCH-INVALID-DESCRIPTOR`, one test per rule. Duplicate identifiers give `ARCH-DUPLICATE-ID`. Unknown lookup gives `ARCH-UNKNOWN-ID`. `architectures` keeps registration order and is frozen. The input list is not mutated. Two valid entries each resolve by their `isa.architectureId`. | ERR-08; ERR-01 (`ARCH-` codes)                  |
+| 1.1-c | `registry.ts`: two more validation rules                                     | 1.1-b; DR-078 b; DR-079 | DATA_CONTRACTS §3.2 as amended                                    | A register whose `bits` is not a positive integer is rejected. More than one register with role `'output'`, or more than one with role `'program-counter'`, is rejected. One of each is accepted, and none of either is accepted. All with `ARCH-INVALID-DESCRIPTOR`. Existing registry tests still pass.                                           | ERR-08                                          |
 
 **Notes.** The types are transcribed, not designed; the reviewer compares `types.ts` with the contract field by field. Registry tests need descriptors but no working CPU: a stub `createInstance` that throws is enough, kept in `tests/platform/helpers/`.
 
@@ -162,15 +171,15 @@ Every slice also meets DEFINITION_OF_DONE §2 and §3. Catalogue IDs refer to TE
 
 **Purpose.** The single entry point. Each slice adds one behaviour to a passing controller. Controller tests live in one file per slice (`controller-core.test.ts`, `controller-instruction.test.ts`, and so on).
 
-| Slice | Builds                                                                                                                              | Needs                                  | Contract                                               | Acceptance criteria                                                                                                                                                                                                                                                                                                                                                                                                                             | Catalogue                                                           |
-| ----- | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| 1.4-a | `controller.ts` core: `createController`, `snapshot`, `subscribe`, `load`, `reset`, `stepClock` (including halt), `readMemory`      | 1.1 to 1.3, 1.5-a; DR-077 a, c, d; Q-1 | MODULE_CONTRACTS §2.4, §2.4.1–§2.4.3, §2.4.6           | The counter is 0 after load and reset and advances by `cyclesCompleted`. A halt adds no cycle and sets `halted`; later steps return `Ok` with zero cycles. Result errors change nothing and do not call the architecture (spy). The same snapshot object is returned until a change. Listeners run before the call returns. `readMemory` returns a copy and never calls the architecture. An earlier snapshot is unchanged by later steps.      | CYC-01, 02, 04, 07; ERR-02, 04, 05, 06, 07 (halted); SNP-01, 02, 04 |
-| 1.4-b | `stepInstruction`; history recording; `history()`                                                                                   | 1.4-a; DR-074; DR-078 b                | §2.4.1; EVENT_MODEL §6, §10                            | Advances exactly the instruction's cycles. Produces the same snapshots, events and history as the equivalent clock steps. Events in an update are ordered by `(cycle, sequence)`. `historyLimit` is the enforced limit. Eviction leaves delivered snapshots and events untouched.                                                                                                                                                               | CYC-03; EVT-01; HST-04, 06                                          |
-| 1.4-c | Fault path and `PLT-INTERNAL` path; recovery on reset and load. Writes the DR-075 sentence into EVENT_MODEL §2.                     | 1.4-b; DR-074; DR-077 d                | §2.4.5; SIMULATION_PLATFORM §9; DR-070, DR-071, DR-075 | A fault outcome: the counter is unchanged by the faulting step, one platform `fault` event with the next free sequence, state `faulted`, `lastFault` set. Cycles completed earlier in the same call stay counted and published. A throw or a rejected event batch: `PLT-INTERNAL`, the published snapshot is the last committed state, steps return `Ok` with zero cycles until reset, and reset uses a new instance with the program reloaded. | CYC-05, 06; EVT-06; ERR-07 (faulted)                                |
-| 1.4-d | `beginRun`, `runBatch`, `endRun`                                                                                                    | 1.4-c; DR-077 c, e                     | §2.4.1, §2.4.2; SIMULATION_PLATFORM §3.2, §5           | Never more than `n` cycles. Stops early on halt or fault with the right reason. The final state does not depend on batch size. Pause and resume continue from the same state. Each run-state error code is returned in the state the contract names.                                                                                                                                                                                            | CYC-08; ERR-03; LCY-02; DET-02                                      |
-| 1.4-e | `setBreakpoints`; breakpoint stop in `runBatch`; `breakpointHit` on steps. Writes the DR-076 lines into the two contract documents. | 1.4-d; DR-027 confirmation             | §2.4.4; SIMULATION_PLATFORM §6; DR-076                 | A batch stops after the instruction boundary whose program counter is in the set, reports the address with reason `breakpoint`, and leaves the controller `paused` with no fault. The next run continues past it. Steps report without stopping. The set survives load and reset. The fixture receives no breakpoint data.                                                                                                                      | BRK-01, 02, 03, 04 (controller level), 05, 06; CYC-08 (breakpoint)  |
+| Slice | Builds                                                                                                                              | Needs                                       | Contract                                               | Acceptance criteria                                                                                                                                                                                                                                                                                                                                                                                                                             | Catalogue                                                           |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| 1.4-a | `controller.ts` core: `createController`, `snapshot`, `subscribe`, `load`, `reset`, `stepClock` (including halt), `readMemory`      | 1.1 to 1.3, 1.5-a; DR-077 a, c, d; DR-077 h | MODULE_CONTRACTS §2.4, §2.4.1–§2.4.3, §2.4.6           | The counter is 0 after load and reset and advances by `cyclesCompleted`. A halt adds no cycle and sets `halted`; later steps return `Ok` with zero cycles. Result errors change nothing and do not call the architecture (spy). The same snapshot object is returned until a change. Listeners run before the call returns. `readMemory` returns a copy and never calls the architecture. An earlier snapshot is unchanged by later steps.      | CYC-01, 02, 04, 07; ERR-02, 04, 05, 06, 07 (halted); SNP-01, 02, 04 |
+| 1.4-b | `stepInstruction`; history recording; `history()`                                                                                   | 1.4-a; DR-074; DR-078 b                     | §2.4.1; EVENT_MODEL §6, §10                            | Advances exactly the instruction's cycles. Produces the same snapshots, events and history as the equivalent clock steps. Events in an update are ordered by `(cycle, sequence)`. `historyLimit` is the enforced limit. Eviction leaves delivered snapshots and events untouched.                                                                                                                                                               | CYC-03; EVT-01; HST-04, 06                                          |
+| 1.4-c | Fault path and `PLT-INTERNAL` path; recovery on reset and load. Writes the DR-075 sentence into EVENT_MODEL §2.                     | 1.4-b; DR-074; DR-077 d                     | §2.4.5; SIMULATION_PLATFORM §9; DR-070, DR-071, DR-075 | A fault outcome: the counter is unchanged by the faulting step, one platform `fault` event with the next free sequence, state `faulted`, `lastFault` set. Cycles completed earlier in the same call stay counted and published. A throw or a rejected event batch: `PLT-INTERNAL`, the published snapshot is the last committed state, steps return `Ok` with zero cycles until reset, and reset uses a new instance with the program reloaded. | CYC-05, 06; EVT-06; ERR-07 (faulted)                                |
+| 1.4-d | `beginRun`, `runBatch`, `endRun`                                                                                                    | 1.4-c; DR-077 c, e                          | §2.4.1, §2.4.2; SIMULATION_PLATFORM §3.2, §5           | Never more than `n` cycles. Stops early on halt or fault with the right reason. The final state does not depend on batch size. Pause and resume continue from the same state. Each run-state error code is returned in the state the contract names.                                                                                                                                                                                            | CYC-08; ERR-03; LCY-02; DET-02                                      |
+| 1.4-e | `setBreakpoints`; breakpoint stop in `runBatch`; `breakpointHit` on steps. Writes the DR-076 lines into the two contract documents. | 1.4-d; DR-027                               | §2.4.4; SIMULATION_PLATFORM §6; DR-076                 | A batch stops after the instruction boundary whose program counter is in the set, reports the address with reason `breakpoint`, and leaves the controller `paused` with no fault. The next run continues past it. Steps report without stopping. The set survives load and reset. The fixture receives no breakpoint data.                                                                                                                      | BRK-01, 02, 03, 04 (controller level), 05, 06; CYC-08 (breakpoint)  |
 
-**Step pipeline (pending DR-074).** Every advancing call follows one order, so that a failure at any point publishes nothing half-done:
+**Step pipeline (DR-074).** Every advancing call follows one order, so that a failure at any point publishes nothing half-done:
 
 1. Check the argument, the lifecycle and program presence. On error, return it; nothing else happens.
 2. Call the guard's `stepClock`. On an internal failure, take the `PLT-INTERNAL` path.
@@ -197,19 +206,22 @@ Every slice also meets DEFINITION_OF_DONE §2 and §3. Catalogue IDs refer to TE
 
 ## 6. Implementation Order
 
-```
-1.1-a → 1.1-b → 1.2-a → 1.2-b → 1.3-a → 1.3-b → 1.3-c → 1.3-d
-      → 1.5-a (fixture) → 1.4-a → 1.4-b → 1.4-c → 1.4-d → 1.4-e
-      → 1.5-b → 1.5-c
-```
+Work runs in batches. One lead implementation agent owns each batch, delegates bounded tasks to sub-agents, integrates, and runs validation. The supervisor audits each batch before the next starts, and each batch is committed on its own.
 
-One slice at a time, each reviewed and committed before the next. If a slice is waiting for a decision, the next ungated slice is taken instead; 1.1-a, 1.1-b, 1.3-a, 1.3-b and 1.3-d need no pending decision.
+| Batch | Slices                                                                             | Shape                                                                                                            |
+| ----- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| 1     | 1.1-a, 1.1-b, 1.3-a, 1.3-b, 1.3-d                                                  | Done and approved.                                                                                               |
+| 2     | Step 0 (DR-074 contract and type revision), then 1.1-c, 1.2-a, 1.2-b, 1.3-c, 1.5-a | Step 0 first, by the lead. Then five tasks in parallel, each owning its own files. Assignment: Appendix A.       |
+| 3     | 1.4-a → 1.4-b → 1.4-c → 1.4-d → 1.4-e                                              | Sequential. All five change `controller.ts`, so they cannot run in parallel. Tests for a slice may be delegated. |
+| 4     | 1.5-b, 1.5-c                                                                       | 1.5-b first; its replay helper and determinism tests can be delegated separately.                                |
+
+The assignments for Batches 3 and 4 are written when the batch before them is approved.
 
 ---
 
-## 7. Lifecycle Transitions (for slice 1.2-a; pending DR-077 b)
+## 7. Lifecycle Transitions (for slice 1.2-a; DR-077 b, approved)
 
-Derived from SIMULATION_PLATFORM §3.1 and §3.2 and MODULE_CONTRACTS §2.4.2. Cells marked † are not stated in the contracts and are the DR-077 b reading.
+Derived from SIMULATION_PLATFORM §3.1 and §3.2 and MODULE_CONTRACTS §2.4.2. Cells marked † were not stated in the contracts and are fixed by DR-077 b.
 
 | Action                           | ready             | running               | paused            | halted            | faulted           |
 | -------------------------------- | ----------------- | --------------------- | ----------------- | ----------------- | ----------------- |
@@ -252,158 +264,222 @@ A step taken from `ready` applies the step action first (to `paused`), then `hal
 
 ## 10. Slice Status
 
-| Slice | Status                       | Verdict                  | Date       | Follow-ups                                                                                                                                                                                      |
-| ----- | ---------------------------- | ------------------------ | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1.1-a | Done, awaiting commit        | APPROVED WITH FOLLOW-UPS | 2026-11-16 | In 1.1-b: remove the `expect(true).toBe(true)` fillers from `contract-types.test.ts`. In 1.3-c: a narrowing helper is needed to read `SharedEventPayloads` from an `ExecutionEvent`.            |
-| 1.1-b | Done, awaiting commit        | APPROVED                 | 2026-11-16 | Two readings need a product-owner ruling, neither blocking: whether `RegisterDefinition.bits` is validated (currently not), and whether an empty architecture list is accepted (currently yes). |
-| 1.2-a | Waiting: DR-077 b            | —                        | —          | —                                                                                                                                                                                               |
-| 1.2-b | Waiting: DR-074, DR-077 d    | —                        | —          | —                                                                                                                                                                                               |
-| 1.3-a | Not started                  | —                        | —          | —                                                                                                                                                                                               |
-| 1.3-b | Not started                  | —                        | —          | —                                                                                                                                                                                               |
-| 1.3-c | Waiting: DR-077 f, g         | —                        | —          | —                                                                                                                                                                                               |
-| 1.3-d | Not started                  | —                        | —          | —                                                                                                                                                                                               |
-| 1.5-a | Waiting: DR-074              | —                        | —          | —                                                                                                                                                                                               |
-| 1.4-a | Waiting: DR-077 a, c, d; Q-1 | —                        | —          | —                                                                                                                                                                                               |
-| 1.4-b | Waiting: DR-074, DR-078 b    | —                        | —          | —                                                                                                                                                                                               |
-| 1.4-c | Waiting: DR-074, DR-077 d    | —                        | —          | —                                                                                                                                                                                               |
-| 1.4-d | Waiting: DR-077 c, e         | —                        | —          | —                                                                                                                                                                                               |
-| 1.4-e | Waiting: DR-027              | —                        | —          | —                                                                                                                                                                                               |
-| 1.5-b | Not started                  | —                        | —          | —                                                                                                                                                                                               |
-| 1.5-c | Not started                  | —                        | —          | —                                                                                                                                                                                               |
+| Slice | Status                | Verdict                  | Date       | Follow-ups                                                                              |
+| ----- | --------------------- | ------------------------ | ---------- | --------------------------------------------------------------------------------------- |
+| 1.1-a | Committed (1fb2322)   | APPROVED WITH FOLLOW-UPS | 2026-11-16 | Closed: fillers removed in 1.1-b. Open: narrowing of shared payloads, handled in 1.3-c. |
+| 1.1-b | Committed (db6703d)   | APPROVED                 | 2026-11-16 | Closed by DR-079: the register `bits` check goes to 1.1-c; an empty list stays valid.   |
+| 1.1-c | Batch 2               | —                        | —          | —                                                                                       |
+| 1.2-a | Batch 2               | —                        | —          | —                                                                                       |
+| 1.2-b | Batch 2               | —                        | —          | —                                                                                       |
+| 1.3-a | Done, awaiting commit | APPROVED WITH FOLLOW-UPS | 2026-11-16 | Neutral register and flag names in `snapshots.test.ts`: done in Batch 2.                |
+| 1.3-b | Done, awaiting commit | APPROVED                 | 2026-11-16 | Closed by DR-079: payloads are frozen in place.                                         |
+| 1.3-c | Batch 2               | —                        | —          | —                                                                                       |
+| 1.3-d | Done, awaiting commit | APPROVED                 | 2026-11-16 | Closed by DR-079: the width is not validated.                                           |
+| 1.5-a | Batch 2               | —                        | —          | —                                                                                       |
+| 1.4-a | Batch 3               | —                        | —          | —                                                                                       |
+| 1.4-b | Batch 3               | —                        | —          | —                                                                                       |
+| 1.4-c | Batch 3               | —                        | —          | —                                                                                       |
+| 1.4-d | Batch 3               | —                        | —          | —                                                                                       |
+| 1.4-e | Batch 3               | —                        | —          | —                                                                                       |
+| 1.5-b | Batch 4               | —                        | —          | —                                                                                       |
+| 1.5-c | Batch 4               | —                        | —          | —                                                                                       |
 
 ---
 
-## Appendix A — Implementation Prompt for Slice 1.1-a
+## Appendix A — Implementation Assignment for Batch 2
 
-Give the text below to the implementation agent unchanged.
+Give the text below to the lead implementation agent unchanged. The prompts for the slices already done are in the git history of this file.
 
 ````markdown
-# BITSHIFT — Slice 1.1-a: Shared Primitives and Contract Types
+# BITSHIFT — Phase 1, Batch 2: Step 0 and Slices 1.1-c, 1.2-a, 1.2-b, 1.3-c, 1.5-a
 
-You are the implementation agent for BITSHIFT. Implement exactly this slice. Do not start any other work. Do not commit.
+## Roles
+
+You are the **lead implementation agent** (Sonnet). You own decomposition, delegation, integration, validation and the report. Delegate the five slice tasks to Haiku sub-agents (Agent tool, `model: "haiku"`), in parallel, one agent per task, after you have finished Step 0 yourself. If you cannot spawn sub-agents, say so in the report and do the work yourself; never claim delegation that did not happen. You may keep a task yourself if you judge it too subtle to delegate (1.2-b is the likely one); say so in the report.
+
+The engineering supervisor (Fable) audits your diff independently and does not write code. The product owner accepts.
+
+## Prerequisite
+
+`git status` must show a clean tree, with the previous batch (snapshots, events, breakpoints) committed. If it is not clean, stop and report. Do not commit, stage, stash or reset anything yourself.
 
 ## Read first
 
-1. `CLAUDE.md`
-2. `docs/contracts/DATA_CONTRACTS.md` (all of it)
-3. `docs/contracts/EVENT_MODEL.md` §2, §3.2, §10
-4. `docs/contracts/MODULE_CONTRACTS.md` §3.1, §3.2, §3.4
-5. `docs/engineering/CODING_STANDARDS.md` §2 to §5 and §8
-6. `docs/engineering/DEFINITION_OF_DONE.md` §2, §3, §6
+`CLAUDE.md`; `docs/engineering/PHASE_1_EXECUTION_PLAN.md` sections 2, 4, 5 and 7; `docs/engineering/PHASE_1_READINESS_REVIEW.md` sections 2 and 3; `docs/contracts/MODULE_CONTRACTS.md` §2.1 to §2.7 and §3; `docs/contracts/DATA_CONTRACTS.md` §3 to §5 and §11; `docs/contracts/EVENT_MODEL.md` §3, §5, §10; `docs/engineering/TEST_STRATEGY.md` §4 and §5; `docs/engineering/CODING_STANDARDS.md`; the existing code in `src/platform/` and `tests/platform/`.
 
-## Objective
+Where a contract document and the decision register disagree, **the register wins** (the amendments are being written by these slices). All decisions named below are approved.
 
-Put the platform's shared vocabulary into code: the `Result` helpers, the contract types, and memory-range validation. This slice contains no simulation behaviour, no registry and no controller.
+## Rules for every task
 
-## Files
+- TypeScript strict. No `any`, enums, default exports, `@ts-ignore`, `@ts-expect-error`, or non-null assertions without a reason on the same line. Explicit return types on exports. `import type` for types. A one-line doc comment citing the contract section on each export.
+- Platform modules import only `./result` and `./types`. None of this batch's modules imports another. Nothing in `src/` imports from `tests/`. Do not change `src/platform/index.ts`.
+- No forbidden globals in `src/platform` (CODING_STANDARDS §4.2). No new dependency. No configuration change.
+- Tests: expected values come from the contract or a hand-written script, never from running the code. Assert on diagnostic codes, never on message text. No BITSHIFT-8 names or sizes: no `'bitshift-8'`, no registers called `A`, `B`, `PC`, `IR`, no flags called `Z`, `C`, `N`, no 256-byte memory. Every test has an assertion that can fail.
+- **Stop rule.** If a contract or this assignment admits two behaviours, do not choose silently. Take the narrower literal reading, and list it in the report. Do not invent API.
+- Sub-agents write code and tests only. **You** write every documentation change.
+- Format only the files you touch (`pnpm exec prettier --write <files>`).
 
-Create exactly these files:
+## Step 0 — DR-074 contract and type revision (lead, before delegating)
 
-| File                                    | Content                                                             |
-| --------------------------------------- | ------------------------------------------------------------------- |
-| `src/platform/result.ts`                | `Result`, `Diagnostic`, `SourceSpan`, `ok`, `err`                   |
-| `src/platform/types.ts`                 | The contract types listed below. Types only. No runtime code.       |
-| `src/platform/memory-range.ts`          | `validateMemoryRange`                                               |
-| `src/platform/index.ts`                 | Re-exports everything above. The only public entry of the platform. |
-| `tests/platform/result.test.ts`         | Tests for `ok` and `err`                                            |
-| `tests/platform/memory-range.test.ts`   | Tests for `validateMemoryRange`                                     |
-| `tests/platform/contract-types.test.ts` | Type-level tests                                                    |
+1. `src/platform/types.ts`: remove `stepInstruction()` and its comment from `CpuInstance`. Nothing else.
+2. Apply the amendments numbered 2, 3, 5, 6 and 7 in PHASE_1_READINESS_REVIEW §2.6 to: MODULE_CONTRACTS §3.2 and §3.2 normative rule 1; DATA_CONTRACTS §5 invariants 1 and 2; SIMULATION_PLATFORM §2.1 rule 1 and the table row for the instruction step; CPU_ARCHITECTURE_STRATEGY §3, §4.1 and §4.2; SYSTEM_ARCHITECTURE §8.2; TEST_STRATEGY CYC-03 and CYC-05. Change only the sentences those amendments name. Amendment 1 is already in the register. Amendment 4 (MODULE_CONTRACTS §2.4.x) belongs to Batch 3; do not write it now.
+3. Run `pnpm typecheck` and `pnpm test`. Both must pass before you delegate.
 
-Delete `src/platform/.gitkeep` and `tests/platform/.gitkeep`. Change no other file. In particular, do not edit anything under `docs/`, and do not edit `eslint.config.js`, `tsconfig.json`, `vite.config.ts` or `package.json`.
+## Task A — Slice 1.1-c: registry validation (DR-078 b, DR-079)
 
-## `result.ts`
+Files: `src/platform/registry.ts`, `tests/platform/registry.test.ts`. Docs (lead): DATA_CONTRACTS §3.2 validation list gains two bullets; MODULE_CONTRACTS §2.1 gains "An empty list is valid"; TEST_STRATEGY ERR-08 is unchanged in wording.
 
-Transcribe `Result`, `SourceSpan` and `Diagnostic` from DATA_CONTRACTS §2. Add the two helpers with exactly these signatures:
+Add to `validateDescriptor`, after the register-name check: every `RegisterDefinition.bits` is a positive integer; at most one register has role `'output'`; at most one has role `'program-counter'`. Each failure returns `ARCH-INVALID-DESCRIPTOR`. No upper bound on `bits`.
+
+Tests: `bits` of 0, -1, 1.5 and `NaN` rejected; two `'output'` registers rejected; two `'program-counter'` registers rejected; exactly one of each accepted; none of either accepted. All existing registry tests still pass unchanged.
+
+## Task B — Slice 1.2-a: lifecycle (DR-077 b)
+
+Files: `src/platform/lifecycle.ts`, `tests/platform/lifecycle.test.ts`. Docs (lead): the table into MODULE_CONTRACTS §2.2; `fault` arrows from `ready`, `halted` and `faulted` into the SIMULATION_PLATFORM §3.1 diagram.
 
 ```ts
-/** Builds a successful Result (DATA_CONTRACTS §2). */
-export function ok<T>(value: T): { readonly ok: true; readonly value: T };
-/** Builds a failed Result (DATA_CONTRACTS §2). */
-export function err<E>(error: E): { readonly ok: false; readonly error: E };
+export type LifecycleAction =
+  'load' | 'reset' | 'begin-run' | 'end-run' | 'clock-step' | 'instruction-step' | 'halt' | 'fault';
+
+/** Pure transition function (MODULE_CONTRACTS §2.2). */
+export function nextState(current: CpuState, action: LifecycleAction): Result<CpuState, Diagnostic>;
 ```
 
-They carry no other behaviour.
+Implement exactly the 40 cells of PHASE_1_EXECUTION_PLAN section 7. A cell that names a state returns `ok(state)`. A cell that names a code returns `err` with that code and severity `'error'`. Pure, no module state.
 
-## `types.ts`
+Tests: one table in the test file, written by hand from section 7, covering all 40 cells (LCY-01). Assert that the test table has exactly 40 entries.
 
-Transcribe each type below from its contract section **exactly**: same name, same fields, same optionality, same type parameters and defaults, every field `readonly`, every array `readonly T[]`. Add no field, method or type parameter the contract does not show. Give each exported type a one-line doc comment that cites its contract section.
+## Task C — Slice 1.2-b: instance guard (DR-074, DR-077 d, DR-070, DR-071)
 
-- DATA_CONTRACTS §2: `ArchitectureId`, `Address`, `Word`, `ClockCycle`
-- §3.2: `ArchitectureDescriptor`, `RegisterDefinition`, `RegisterRole`, `FlagDefinition`
-- §4.1: `RegisterValue`, `FlagValue`, `CpuStateCopy`
-- §4.2: `CpuState`, `CpuSnapshot`
-- §5: `StepOutcome`, `ArchitectureEvent`
-- §6: `ExecutionEvent`
-- §7: `UpdateReason`, `ControllerUpdate`
-- §8 and §8.1: `ProgramImage`, `SourceMapEntry`, `AssemblyResult`, `IsaDescriptor`, `InstructionDefinition`
-- §10: `MemoryRange`, `MemoryReadResult`
-- §12: `DatapathViewModel`, `DatapathComponentState`, `BusState` only
-- EVENT_MODEL §10: `InstructionRecord`, `StateChange`
-- MODULE_CONTRACTS §3.1, §3.2, §3.4: `CpuArchitecture`, `CpuInstance`, `VisualizationAdapter`, as the contract shows them today
-
-The shared event payloads are a table in EVENT_MODEL §3.2. Write them as one interface and one union:
+Files: `src/platform/instance-guard.ts`, `tests/platform/instance-guard.test.ts`, and `tests/platform/helpers/stub-instance.ts` for small hand-made `CpuInstance` stubs. Do not use the fixture from Task E.
 
 ```ts
-/** Payload of each shared event kind (EVENT_MODEL §3.2). */
-export interface SharedEventPayloads {
-  readonly 'micro-operation': { readonly controlSignals: readonly string[] };
-  // one entry per row of the table, with exactly the fields in its Payload column, all readonly
+/** Outcome of a guarded architecture call. */
+export type Guarded<T> =
+  | { readonly kind: 'ok'; readonly value: T }
+  | { readonly kind: 'internal'; readonly diagnostic: Diagnostic };
+
+/** The only holder of a CPU instance; contains architecture exceptions (MODULE_CONTRACTS §2.3, §2.4.5). */
+export interface InstanceGuard {
+  /** False after an internal failure, until `replace()` succeeds. */
+  readonly reliable: boolean;
+  loadProgram(image: ProgramImage): Guarded<Result<void, Diagnostic>>;
+  reset(): Guarded<void>;
+  stepClock(): Guarded<StepOutcome>;
+  readState(): Guarded<CpuStateCopy>;
+  /** Discards the instance, creates a new one, and reloads the last accepted program. */
+  replace(): Guarded<void>;
 }
-/** The shared event kinds (EVENT_MODEL §3.2). */
-export type SharedEventKind = keyof SharedEventPayloads;
+
+export function createInstanceGuard(architecture: CpuArchitecture): InstanceGuard;
 ```
 
-`types.ts` imports `Result`, `Diagnostic` and `SourceSpan` with `import type`. `index.ts` re-exports types with `export type { ... }` and functions with `export { ... }`.
+Behaviour:
 
-## `memory-range.ts`
+1. `createInstanceGuard` calls `architecture.createInstance()` once. If that throws, the guard is created unreliable.
+2. Any exception thrown by an architecture call is caught here and nowhere else. The call returns `internal` with code `PLT-INTERNAL`, severity `'error'`, and a message that includes the thrown value's message. The guard becomes unreliable.
+3. While unreliable, `loadProgram`, `reset`, `stepClock` and `readState` do not call the instance. They return `internal` with a `PLT-INTERNAL` diagnostic.
+4. `stepClock` checks the outcome against DATA_CONTRACTS §5. It is invalid when: `cyclesCompleted` is not 0 or 1; `events` is not an array; a `fault` is present together with a non-zero `cyclesCompleted`, `halted` true, or any event; an event's `cycleOffset` is not an integer from 1 to `cyclesCompleted`. An invalid outcome is treated exactly like a throw.
+5. `loadProgram` returns the architecture's `Result` inside `ok`. When that `Result` is ok, the guard remembers the image as the last accepted program. A rejected load does not change the remembered image and does not make the guard unreliable.
+6. `replace()` calls `createInstance()` again and, if a program was accepted earlier, loads it into the new instance. If creation throws, or the reload throws or is rejected, the result is `internal` and the guard stays unreliable. Otherwise the guard is reliable.
+7. The guard does not log, count cycles, stamp events, or know about lifecycle state.
+
+Tests (CYC-06 at guard level): a throw from each of the four instance methods; a throwing `createInstance`; no instance call while unreliable (count calls on the stub); each invalid-outcome case in rule 4, one test each; a valid fault outcome and a valid zero-cycle outcome pass through; a rejected load keeps the earlier image; `replace` creates a second instance and reloads the last accepted image; `replace` with no program loads nothing; `replace` that fails stays unreliable.
+
+## Task D — Slice 1.3-c: history and instruction recorder (DR-077 f, g)
+
+Files: `src/platform/history.ts`, `tests/platform/history.test.ts`. Docs (lead): EVENT_MODEL §10 gains the target format and the sentence that the platform does not set `explanation`.
 
 ```ts
-/** Checks a memory range against a memory size (DATA_CONTRACTS §10). Pure. */
-export function validateMemoryRange(
-  range: MemoryRange,
-  memoryBytes: number,
-): Result<MemoryRange, Diagnostic>;
+export interface ExecutionHistory {
+  readonly limit: number;
+  entries(): readonly InstructionRecord[];
+  append(record: InstructionRecord): void;
+  clear(): void;
+  readonly truncated: boolean;
+}
+export function createExecutionHistory(limit: number): Result<ExecutionHistory, Diagnostic>;
+
+/** Turns stamped events into instruction records (EVENT_MODEL §10). */
+export interface InstructionRecorder {
+  /** Feeds events in order. Returns the records completed by these events, oldest first. */
+  record(events: readonly ExecutionEvent[]): readonly InstructionRecord[];
+  /** Forgets any open instruction and restarts `index` at 0. */
+  reset(): void;
+}
+export function createInstructionRecorder(
+  outputRegisterName: string | undefined,
+): InstructionRecorder;
 ```
 
-A range is valid when `start` is an integer and at least 0, `length` is a positive integer, and `start + length` is at most `memoryBytes`. A valid range returns `ok` with the range it was given. Any other range returns `err` with code `PLT-MEMORY-RANGE` and severity `'error'`. Write the message in plain language; tests do not read it.
+History (MODULE_CONTRACTS §2.7): a limit that is not a positive integer returns `PLT-ARGUMENT`. `append` evicts the oldest record when the history is at its limit. `truncated` becomes true at the first eviction and false after `clear`. `entries()` returns a frozen array, oldest first, and the same array object until the next `append` or `clear`. Build that array on read and cache it; do not rebuild it on every `append`.
 
-## Not in this slice
+Recorder (EVENT_MODEL §10): the open instruction survives between `record` calls. `instruction-start` opens a record with `address`, `mnemonic` and `startCycle` (the event's cycle). While a record is open, each state-changing event adds one `StateChange`, in order: `register-write` (target is the register name), `flag-update` (target is the flag name), `memory-write` (target is `memory[<address>]` with the address in decimal, for example `memory[16]`), `output-emitted` (target is `outputRegisterName`). `instruction-end` closes the record with `endCycle` and returns it. `index` counts completed records from 0. Records, their `changes` arrays and each change are frozen. A record has no `explanation` key. Every other kind is ignored.
 
-Do not define `ArchitectureRegistry`, `LifecycleAction`, `ControllerOptions`, `ExecutionController`, `ExecutionHistory`, `BreakpointSet`, `RegisterView`, `MemoryView`, `ControlSignalView`, `TimelineEntry`, `InstructionExplanation`, `AppServices`, `ControllerStore` or `EditorPersistence`. Do not write any registry, lookup or descriptor-validation code. Do not create a fixture or a stub architecture. Do not create anything under `src/app`, `src/architectures` or `src/assembler`.
+Narrow readings to implement and report: state-changing events with no open instruction are ignored; `instruction-end` with no open instruction is ignored; `instruction-start` while one is open discards the unfinished one; `output-emitted` when `outputRegisterName` is `undefined` adds no change; an event whose payload lacks the fields its kind requires is ignored. Read payloads through type guards, with no casts to `any`.
 
-## Acceptance criteria
+Tests (HST-01, 02, 03, 05, 07; SNP-03 for records): limit enforced with oldest evicted; `truncated` life cycle; bad limits; stable and frozen `entries()`; a full instruction with all four change kinds in order, expected record written by hand; an instruction split across two `record` calls; an instruction that never ends produces no record; `index` restarts after `reset`; unknown and namespaced kinds ignored; no `explanation` key; frozen at every level.
 
-1. `ok(v)` returns `{ ok: true, value: v }` and `err(e)` returns `{ ok: false, error: e }` (runtime test). Both are assignable to `Result<T, E>`, and checking `result.ok` narrows to `value` or `error` (type-level test).
-2. `validateMemoryRange` accepts: the whole memory (`start` 0, `length` equal to `memoryBytes`); a single byte at the last address; a range in the middle. Each returns `ok` with a range equal to the input.
-3. `validateMemoryRange` rejects, each with code `PLT-MEMORY-RANGE`: a negative `start`; a fractional `start`; `length` 0; a negative `length`; a fractional `length`; `start` equal to `memoryBytes`; a range that ends one byte past the end; `NaN` in either field; `Infinity` in either field.
-4. `validateMemoryRange` does not mutate its argument, and equal inputs give equal results.
-5. The memory-range tests use at least two memory sizes, and at least one is not 256. Tests assert on diagnostic codes, never on message text.
-6. Type-level tests, using `expectTypeOf` from `vitest`, prove:
-   - `keyof StepOutcome` is exactly `'cyclesCompleted' | 'instructionCompleted' | 'halted' | 'fault' | 'events'` (TEST_STRATEGY CYC-09: no cycle number, no breakpoint field);
-   - `keyof ArchitectureEvent` is exactly `'kind' | 'cycleOffset' | 'payload'`;
-   - `keyof ExecutionEvent` is exactly `'kind' | 'cycle' | 'sequence' | 'payload'`;
-   - `'id'` and `'programCounter'` are not keys of `ArchitectureDescriptor`;
-   - `'cycle'` and `'state'` are not keys of `CpuStateCopy`, and `'architectureId'`, `'cycle'`, `'state'` and `'lastFault'` are keys of `CpuSnapshot`;
-   - `keyof SharedEventPayloads['micro-operation']` is exactly `'controlSignals'`;
-   - `SharedEventKind` is exactly the twelve kinds in EVENT_MODEL §3.2;
-   - `CpuSnapshot['registers']` is `readonly RegisterValue[]`, and `ControllerUpdate['events']` is `readonly ExecutionEvent[]`.
+## Task E — Slice 1.5-a: the fixture architecture (TEST_STRATEGY §4, DR-074)
 
-   For "is not a key", use the form `expectTypeOf<'id' extends keyof ArchitectureDescriptor ? true : false>().toEqualTypeOf<false>()`.
+Files: `tests/platform/fixtures/fixture-architecture.ts` and `tests/platform/fixtures/fixture-architecture.test.ts`. Nothing under `src/`.
 
-7. The type-level tests are effective: temporarily change one expected type to a wrong one, confirm that `pnpm typecheck` fails, then restore it. Say in your report which assertion you used.
-8. `src/platform/` imports nothing outside itself. `index.ts` has named exports only.
-9. `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm format:check` and `pnpm build` all pass. The 44 tests that exist today still pass.
+The fixture is a **script player**, not a CPU. It has no decoder and no instruction semantics.
 
-## Rules
+```ts
+/** One scripted clock cycle. */
+export type FixtureCycle =
+  | {
+      readonly events: readonly { readonly kind: string; readonly payload: unknown }[];
+      readonly instructionCompleted?: boolean;
+      readonly halted?: boolean;
+    }
+  | { readonly fault: Diagnostic }
+  | { readonly throws: string };
 
-- TypeScript strict. No `any`, no enums, no default exports, no `@ts-ignore`, no `@ts-expect-error`, no non-null assertions.
-- No new dependency. `expectTypeOf` is part of Vitest.
-- No CPU-specific value anywhere in `src/` or in the tests: no BITSHIFT-8 register name, opcode or `'bitshift-8'` literal.
-- **Stop rule.** If a contract type is ambiguous, contradicts another document, or does not compose with another contract type, do not fix it, do not work around it, and do not edit the contract. If it compiles as written, transcribe it as written and list the problem in your report under "Unresolved issues". If it does not compile as written, stop and report. Two points are already known and are not yours to resolve. Transcribe both as written:
-  - `CpuInstance` includes `stepInstruction()`. A pending decision (DR-074) may remove it later.
-  - `CpuInstance.readState()` returns `CpuStateCopy` with no type argument, while `CpuStateCopy` and `CpuSnapshot` take `TDetails` (DR-078 c, pending).
+export function createFixtureArchitecture(options: {
+  readonly architectureId: string;
+  readonly script: readonly FixtureCycle[];
+}): CpuArchitecture;
+
+/** A hand-written script that emits every shared kind except `fault`, and one namespaced kind. */
+export function defaultScript(architectureId: string): readonly FixtureCycle[];
+```
+
+Descriptor: `wordBits` 16, `addressBits` 6, `memoryBytes` 48. Registers: `W` (16 bits, `'general'`), `IP` (6 bits, `'program-counter'`), `OUTR` (4 bits, `'output'`). Flags: `F1`, `F2`. A small ISA with two instructions, unused by the fixture itself. `visualization` returns an empty view model. No `explainInstruction`.
+
+Instance behaviour:
+
+- `loadProgram(image)`: rejects an image whose `architectureId` differs with code `<architectureId>/LOAD-MISMATCH`, and one that does not fit in memory with `<architectureId>/LOAD-RANGE`; a rejected load changes nothing. An accepted load zeroes memory, copies `bytes` at `origin`, zeroes the registers and flags, sets `IP` to `entry`, and rewinds the script.
+- `reset()`: restores the state as it was right after the last accepted load, and rewinds the script. Before any load, that is the all-zero state.
+- `stepClock()` plays the next script cycle:
+  - an `events` cycle completes one cycle. Each event gets `cycleOffset` 1. The fixture applies the state-changing ones to its own state: `register-write`, `flag-update`, `memory-write`, and `output-emitted` (which sets `OUTR`). It returns `cyclesCompleted` 1 with the cycle's `instructionCompleted` and `halted` flags (default false);
+  - a `fault` cycle returns `cyclesCompleted` 0, no events, the fault, and changes nothing. The script position does not advance;
+  - a `throws` cycle throws an `Error` with that message;
+  - past the end of the script, it returns `cyclesCompleted` 0, no events, `halted` true.
+- `readState()`: `programCounter` is the value of `IP`. Registers and flags are in descriptor order. Every call returns new arrays, new element objects and a new `Uint8Array`.
+- No `stepInstruction`. No cycle counter. No breakpoint input of any kind.
+
+`defaultScript` covers at least three instructions (`instruction-start` … `instruction-end`), the last ending in a `halted` cycle, and uses all eleven emittable shared kinds plus one kind named `<architectureId>/note`. Every state-changing event's `before` must equal the fixture's actual value at that point, and `IP` must change through `register-write` events. Above the script, write a comment table giving the expected `W`, `IP`, `OUTR`, `F1`, `F2` and changed memory bytes after every cycle, worked out by hand.
+
+Tests (SNP-05, CYC-09 runtime): the state after each cycle of `defaultScript` equals the hand-written table; `readState()` shares nothing with the instance or with an earlier `readState()`; no outcome has a `cycle` key or any key beyond the five in `StepOutcome`; a fault cycle leaves `readState()` deeply equal to before and can be repeated; a `throws` cycle throws; load rejections with both codes change nothing; `reset` restores the post-load state and rewinds; two fixtures with different identifiers are independent; the descriptor passes `createArchitectureRegistry`.
+
+## Also in this batch (lead)
+
+`tests/platform/snapshots.test.ts`: rename the register and flag names `A`, `PC`, `Z`, `C` to neutral names (for example `R0`, `P`, `F0`, `F1`). Change nothing else in that file.
+
+## Integration and validation (lead)
+
+1. Read every file your sub-agents wrote, line by line. Fix defects or send them back. You are accountable for correctness.
+2. Confirm the file ownership held: each task touched only its own files.
+3. Run `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm test`, `pnpm build`. All must pass. 194 tests exist before this batch; none may be removed or weakened.
+4. Check `git status` and `git diff`: only the files this assignment names have changed.
+
+## Out of scope
+
+`controller.ts`; anything in `src/app`, `src/architectures`, `src/assembler`; `index.ts`; the replay helper and determinism tests (Batch 4); DR-078 a and DR-078 c; any contract sentence not named above.
 
 ## Report
 
-Use the format in `docs/engineering/DEFINITION_OF_DONE.md` §6. For each acceptance criterion give the name of the test that covers it. For each validation command give the actual result. Report anything you did not run as not run.
+In this order: (A) delegation: which agents were actually used, for what, concurrently or not, and anything you kept or rewrote yourself; (B) per task: files, behaviour, tests added; (C) every documentation sentence you changed, with document and section; (D) every reading taken under the stop rule; (E) the actual result of each of the five commands and the total test count; (F) the exact file list for one commit. Report anything not run as not run. Do not approve your own work.
 ````

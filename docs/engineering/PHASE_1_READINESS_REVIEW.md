@@ -1,7 +1,7 @@
 # BITSHIFT — Phase 1 Readiness Review
 
 **Date:** 2026-11-16. **Author:** engineering supervisor. **For:** the product owner.
-**Status:** Review report. It records what was approved, analyses what was not, and lists the approvals still needed. It approves nothing itself. No contract document, roadmap or source file was changed.
+**Status:** Review report, now closed. **Every approval it asked for has been decided; see section 9.** Sections 1 to 8 are kept as the analysis the decisions refer to. It approves nothing itself. No contract document, roadmap or source file was changed.
 **Related:** [PHASE_1_EXECUTION_PLAN.md](PHASE_1_EXECUTION_PLAN.md), [BITSHIFT_SUPERVISOR.md](BITSHIFT_SUPERVISOR.md), [DECISION_REGISTER.md](../decisions/DECISION_REGISTER.md), [MODULE_CONTRACTS.md](../contracts/MODULE_CONTRACTS.md), [DATA_CONTRACTS.md](../contracts/DATA_CONTRACTS.md), [EVENT_MODEL.md](../contracts/EVENT_MODEL.md), [SIMULATION_PLATFORM.md](../architecture/SIMULATION_PLATFORM.md)
 
 ---
@@ -348,3 +348,24 @@ Each can be answered "approved" in one line. The recommendation is in brackets.
 The 16-slice plan is executable. Five slices can proceed with no further approval. The other eleven need the approvals in section 7, all of which are narrow and have a recommended answer. If items 1, 2, 3, 6 and 7 are approved together, nothing else stands between the project and the end of Phase 1 except the work itself.
 
 No further planning document is needed before implementation.
+
+---
+
+## 9. Product-Owner Decisions (recorded 2026-11-16)
+
+The register is authoritative. This section only maps the requests in section 7 to their outcome.
+
+| Request (section 7)             | Outcome                                                                                                                                                                             |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. DR-074                       | **Approved.** Option A, cycle-atomic commit. `CpuInstance.stepInstruction()` removed. No instruction-level rollback.                                                                |
+| 2. DR-077 a to g                | **Approved**, exactly as presented in section 3.                                                                                                                                    |
+| 3. DR-078 b                     | **Approved.**                                                                                                                                                                       |
+| 4. DR-078 a                     | **Deferred** to Phase 5.                                                                                                                                                            |
+| 5. DR-078 c                     | **Deferred** to Phase 2, in the revised `unknown` form.                                                                                                                             |
+| 6. DR-027                       | **Approved**, with the step-reporting rule in section 1.                                                                                                                            |
+| 7. Q-1                          | **Approved** and recorded as DR-077 h.                                                                                                                                              |
+| 8. Roadmap correction           | **Approved** and applied to DEVELOPMENT_ROADMAP.                                                                                                                                    |
+| 9. Stage 0.4 acceptance         | Not part of this decision set.                                                                                                                                                      |
+| Readings from the slice reviews | **Confirmed** and recorded as DR-079: register widths are positive integers; an empty registry is valid; payloads are frozen in place; `BreakpointSet` does not validate the width. |
+
+Slice counts in sections 4 and 8 predate these decisions. The current plan has 17 slices: slice 1.1-c was added for the two registry rules.

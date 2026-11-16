@@ -58,53 +58,53 @@ This roadmap is a sequence of stages, not a task list. Slices are suggested grou
 ## Phase 1 — Simulation Platform Backbone
 
 **Objective:** Build the architecture-independent platform: registry, lifecycle, controller, events and snapshots, proven with a test-only fixture.
-**Stages:** 5 (1.1–1.5)
+**Stages:** 5 (1.1–1.5). Stage names and order were corrected on 2026-11-16 (DR-073). Slices: [PHASE_1_EXECUTION_PLAN.md](PHASE_1_EXECUTION_PLAN.md).
 **Expected outcomes:** A platform that runs any architecture satisfying the contracts. No real CPU yet.
-**Dependencies:** Phase 0 approved, including ADR-001 and the platform-relevant items in the decision register (DR-013, DR-014, DR-024, DR-027).
+**Dependencies:** Phase 0 approved, including ADR-001 and the Phase 1 items in the blocking summary of the [decision register](../decisions/DECISION_REGISTER.md).
 **Exit criteria:** All platform contract tests pass against the fixture; no platform file imports architecture or UI code.
 
-### Stage 1.1 — Shared Primitives
+### Stage 1.1 — Architecture Registry
 
-- **Objective:** Create the small shared types and utilities used everywhere.
-- **Scope:** `Result`, `Diagnostic`, `SourceSpan`, `ClockCycle`, identifiers, memory range helpers.
-- **Suggested slices:** (1) `Result` helpers; (2) diagnostic and span types; (3) memory-range validation.
+- **Objective:** Create the small shared types and utilities used everywhere, and register architectures.
+- **Scope:** `Result`, `Diagnostic`, `SourceSpan`, `ClockCycle`, identifiers, memory range helpers. Registry module.
+- **Suggested slices:** (1) `Result` helpers, diagnostic and span types, memory-range validation; (2) registry with explicit list.
 - **Dependencies:** Phase 0.
-- **Deliverables:** `src/platform/` shared module; tests in `tests/platform/`.
-- **Acceptance criteria:** Helpers are pure; each has unit tests; no React or architecture imports.
+- **Deliverables:** `src/platform/` shared module and registry module; tests in `tests/platform/`.
+- **Acceptance criteria:** Helpers are pure; each has unit tests; no React or architecture imports. Unknown IDs return `Result` errors.
 
-### Stage 1.2 — Architecture Registry & CPU Lifecycle
+### Stage 1.2 — CPU Lifecycle & Instance Management
 
-- **Objective:** Register architectures and manage instance lifecycle.
-- **Scope:** Registry module, lifecycle states, load and reset rules from SIMULATION_PLATFORM section 2.
-- **Suggested slices:** (1) registry with explicit list; (2) lifecycle state machine; (3) load and reset transitions.
+- **Objective:** Manage instance lifecycle.
+- **Scope:** Lifecycle states, load and reset rules from SIMULATION_PLATFORM section 3. The boundary around the architecture instance.
+- **Suggested slices:** (1) lifecycle state machine; (2) instance management and load and reset transitions.
 - **Dependencies:** 1.1.
-- **Deliverables:** Registry and lifecycle modules; contract tests.
-- **Acceptance criteria:** Unknown IDs return `Result` errors; every transition in the state diagram is tested; illegal transitions are rejected with a diagnostic.
+- **Deliverables:** Lifecycle and instance modules; contract tests.
+- **Acceptance criteria:** Every transition in the state diagram is tested; illegal transitions are rejected with a diagnostic.
 
-### Stage 1.3 — Execution Controller
+### Stage 1.3 — State & Event System
+
+- **Objective:** Deliver ordered, batched events and copied snapshots to subscribers.
+- **Scope:** Event envelope, sequence numbering, batching, snapshot copy rules, bounded instruction history, breakpoint set.
+- **Suggested slices:** (1) snapshots; (2) event envelope and ordering; (3) bounded history (capacity per DR-024); (4) breakpoint set.
+- **Dependencies:** 1.1.
+- **Deliverables:** Event, snapshot, history and breakpoint modules; tests.
+- **Acceptance criteria:** Events are delivered once and in order; a snapshot never changes after creation; history never exceeds its capacity.
+
+### Stage 1.4 — Execution Controller
 
 - **Objective:** Single entry point for step, run and pause.
-- **Scope:** Controller methods from MODULE_CONTRACTS section 3; run loop with bounded batches.
-- **Suggested slices:** (1) step methods; (2) run and pause loop; (3) breakpoint checks at instruction boundaries.
-- **Dependencies:** 1.2, 1.4 (events).
+- **Scope:** Controller methods from MODULE_CONTRACTS section 2.4; subscriptions; run batches with a cycle budget.
+- **Suggested slices:** (1) core and clock step; (2) instruction step and history; (3) fault and internal-error paths; (4) run and pause; (5) breakpoint checks at instruction boundaries.
+- **Dependencies:** 1.1 to 1.3. The fixture slice of Stage 1.5 is implemented before this stage, because the controller is tested with it.
 - **Deliverables:** Controller module; tests with fixture.
 - **Acceptance criteria:** Same program gives same final snapshot for any batch size; pause takes effect within one batch; breakpoints stop at the correct instruction boundary.
 
-### Stage 1.4 — Event Bus & Snapshot Handling
-
-- **Objective:** Deliver ordered, batched events and copied snapshots to subscribers.
-- **Scope:** Event envelope, sequence numbering, batching, subscription, snapshot copy rules, bounded instruction history.
-- **Suggested slices:** (1) event envelope and ordering; (2) subscriptions and batching; (3) bounded history (capacity per DR-024).
-- **Dependencies:** 1.1.
-- **Deliverables:** Event and snapshot modules; tests.
-- **Acceptance criteria:** Events are delivered once and in order; a snapshot never changes after creation; history never exceeds its capacity.
-
-### Stage 1.5 — Platform Fixture & Contract Tests
+### Stage 1.5 — Mock CPU & Verification
 
 - **Objective:** Prove the platform works for an architecture unlike BITSHIFT-8.
 - **Scope:** Test-only fixture architecture; full contract test suite.
-- **Suggested slices:** (1) fixture with different register widths; (2) contract tests for every platform interface; (3) determinism tests.
-- **Dependencies:** 1.2–1.4.
+- **Suggested slices:** (1) fixture with different register widths; (2) contract tests for every platform interface and determinism tests; (3) measurement and phase exit.
+- **Dependencies:** 1.1 for the fixture slice; 1.4 for the rest.
 - **Deliverables:** `tests/platform/fixtures/`, contract test suite.
 - **Acceptance criteria:** Platform tests pass with the fixture; the fixture is never imported from `src/`; determinism tests pass.
 

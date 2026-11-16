@@ -11,8 +11,8 @@ Product definition: `docs/product/PRODUCT_SPEC.md`, `MVP_SCOPE.md`, `RELEASE_ROA
 ## 2. Where the Project Is
 
 - **Release:** v1.0, BITSHIFT-8 simulator. Only v1.0 is authorised for planning and implementation. v2.0 to v4.0 are directions only.
-- **Phase:** Phase 0 (product and architecture foundation). Stages 0.1 to 0.3 are accepted by the product owner. Stage 0.4 (repository foundation) is complete and awaiting acceptance. **Phase 1 has not started.**
-- **Application code:** none. `src/` contains only the placeholder application shell in `src/app/`. The other `src/` directories are empty by design. Do not write simulator code until the phase that owns it has started and its prerequisites are approved.
+- **Phase:** Phase 1 (simulation platform backbone), in progress. Phase 0 is complete. Slice status and the next batch: `docs/engineering/PHASE_1_EXECUTION_PLAN.md` §10.
+- **Application code:** `src/platform/` is being built slice by slice. `src/app/` holds the placeholder shell. The other `src/` directories are empty by design. Do not write code for a phase that has not started.
 
 ## 3. Hierarchy and Workflow
 
@@ -28,7 +28,7 @@ Work is organised as **Phase → Stage → Slice → Task** (`docs/engineering/D
 
 **Agent roles.** The Engineering Supervisor (Fable 5.2) plans, reviews and audits, and never writes code. The Lead Executor (Sonnet 5.5) owns all implementation and may delegate bounded tasks to the Specialist Sub-agent (Haiku 5.5), reviewing each one before integration. The product owner approves decisions and gives final acceptance. Full hierarchy and the seven-step workflow: `docs/engineering/BITSHIFT_SUPERVISOR.md` §1 and §1.2. The rules in this file apply to every agent, including sub-agents.
 
-Supervision, review verdicts and the slice-by-slice plan: `docs/engineering/BITSHIFT_SUPERVISOR.md` and `docs/engineering/PHASE_1_EXECUTION_PLAN.md`. Each slice is gated by the decisions listed in the plan, section 2.
+Supervision, review verdicts and the slice-by-slice plan: `docs/engineering/BITSHIFT_SUPERVISOR.md` and `docs/engineering/PHASE_1_EXECUTION_PLAN.md`. Where a contract document and the decision register disagree, the register wins until the amendment listed in the plan, section 2.2, is written.
 
 ## 4. Approved Decisions That Shape the Code
 
@@ -39,6 +39,7 @@ Authoritative list: `docs/decisions/DECISION_REGISTER.md`. The main ones:
 - **Descriptors are data-only.** `createInstance()` belongs to `CpuArchitecture` (DR-015).
 - **Architecture selection happens at initialization.** No runtime switching in v1.0 (SC-D3).
 - **Architectures are registered in the composition root** `src/app/` (DR-057). The platform imports no concrete architecture. The composition root validates that the selected architecture matches the ISA (DR-069).
+- **Instruction steps are composed by the platform** from `stepClock()`. The CPU instance has no `stepInstruction()`. Atomicity is per clock cycle; there is no instruction-level rollback (DR-074).
 - **Failed steps:** Result errors never invoke the architecture. Faulting steps complete zero cycles and emit no events. Exceptions become `PLT-INTERNAL`, complete zero cycles, and leave the controller faulted. The next reset creates a fresh instance (DR-070, DR-071).
 - **Shared event payloads** keep their Phase 0 fields. Changes need explicit approval (DR-072).
 - **The platform has no timers.** The UI calls `runBatch` (DR-058).
