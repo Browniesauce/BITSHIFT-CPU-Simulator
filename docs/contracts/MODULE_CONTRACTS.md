@@ -406,6 +406,7 @@ export interface CpuInstance {
 2. `readState` returns fresh arrays and a fresh `memory` copy every call.
 3. The instance does not log in normal operation and does not read the clock.
 4. Program memory writes come only from `loadProgram` (DR-029).
+5. Repeated `stepClock` calls on a loaded, running program eventually report `instructionCompleted`, `halted` or a `fault`. The platform sets no bound on the number of cycles in an instruction (DR-080). Each architecture proves this in its conformance suite (TEST_STRATEGY CNF-05).
 
 ### 3.3 Optional Instruction Explanation
 

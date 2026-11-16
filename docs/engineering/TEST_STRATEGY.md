@@ -203,6 +203,7 @@ Each item has a stable ID so that the Definition of Done can refer to it. An ite
 | CNF-02 | Program-counter wrap behaves as specified (DR-004).                                                                                              |
 | CNF-03 | Every unallocated opcode produces the approved fault (DR-016, DR-017).                                                                           |
 | CNF-04 | Expected values are written from the specification, cite the section, and are checked by hand.                                                   |
+| CNF-05 | Every instruction reaches an instruction boundary, a halt or a fault within the number of cycles its specification states (DR-080).              |
 
 ---
 

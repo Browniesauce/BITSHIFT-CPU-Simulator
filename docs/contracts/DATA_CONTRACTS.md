@@ -94,7 +94,7 @@ export interface ArchitectureDescriptor {
 
 export interface RegisterDefinition {
   readonly name: string; // unique within the descriptor
-  readonly bits: number; // positive integer, at most wordBits for word registers
+  readonly bits: number; // positive integer; no upper bound in Phase 1 (DR-080)
   readonly role: RegisterRole;
   readonly programmerVisible: boolean;
 }

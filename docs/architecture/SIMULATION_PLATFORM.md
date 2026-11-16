@@ -235,7 +235,7 @@ The platform uses three error classes. The distinction is part of the contract, 
 Further rules:
 
 - A Result error never changes the state, the counter, the history or the breakpoint set.
-- An exception is never swallowed. The controller records it as `PLT-INTERNAL`, and it is logged to the console in development.
+- An exception is never swallowed. The controller records it as `PLT-INTERNAL` and returns the diagnostic. The platform does not log; development logging belongs to the application layer (DR-080).
 - After an exception, the controller creates a new instance on the next `reset` and reloads the last program. Until then, step and run requests return `Ok` with zero cycles.
 - A missing explanation is none of these. It is optional metadata, shown as generic text, and it never affects execution (DR-061).
 - History eviction is not an error. The timeline shows the truncation notice.
