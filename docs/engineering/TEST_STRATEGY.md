@@ -110,17 +110,17 @@ Each item has a stable ID so that the Definition of Done can refer to it. An ite
 
 ### 5.4 Cycle Counting (CYC, DR-067)
 
-| ID     | Test                                                                                                                                                                            |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CYC-01 | The counter is 0 after `reset` and after a successful `load`.                                                                                                                   |
-| CYC-02 | After one `stepClock` that completes one cycle, the counter is 1, and the snapshot and events report cycle 1.                                                                   |
-| CYC-03 | `stepInstruction` over an N-cycle instruction increases the counter by exactly N.                                                                                               |
-| CYC-04 | A `Result` error from `stepClock` (for example while running) leaves the counter, the snapshot and the history unchanged. The architecture is not called (verified with a spy). |
-| CYC-05 | A step whose outcome is a fault leaves the counter unchanged, emits exactly one platform `fault` event, and sets `state` to `faulted`.                                          |
-| CYC-06 | An architecture that throws leaves the counter unchanged, sets `PLT-INTERNAL` as `lastFault`, and the next `reset` replaces the instance.                                       |
-| CYC-07 | A halt reached during a step does not add a cycle beyond the `cyclesCompleted` reported. Halt, fault and breakpoint never change the counter.                                   |
-| CYC-08 | `runBatch(n)` never runs more than `n` cycles, and stops early at a halt, fault or breakpoint with the correct reason.                                                          |
-| CYC-09 | No `StepOutcome` produced by the architecture contains a cycle number. (Type test and a runtime check on the fixture.)                                                          |
+| ID     | Test                                                                                                                                                                                   |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CYC-01 | The counter is 0 after `reset` and after a successful `load`.                                                                                                                          |
+| CYC-02 | After one `stepClock` that completes one cycle, the counter is 1, and the snapshot and events report cycle 1.                                                                          |
+| CYC-03 | `stepInstruction` over an N-cycle instruction increases the counter by exactly N, and the result equals that of the same number of clock steps.                                        |
+| CYC-04 | A `Result` error from `stepClock` (for example while running) leaves the counter, the snapshot and the history unchanged. The architecture is not called (verified with a spy).        |
+| CYC-05 | A step whose outcome is a fault leaves the counter unchanged, emits exactly one platform `fault` event, sets `state` to `faulted`, and `readState()` equals its value before the step. |
+| CYC-06 | An architecture that throws leaves the counter unchanged, sets `PLT-INTERNAL` as `lastFault`, and the next `reset` replaces the instance.                                              |
+| CYC-07 | A halt reached during a step does not add a cycle beyond the `cyclesCompleted` reported. Halt, fault and breakpoint never change the counter.                                          |
+| CYC-08 | `runBatch(n)` never runs more than `n` cycles, and stops early at a halt, fault or breakpoint with the correct reason.                                                                 |
+| CYC-09 | No `StepOutcome` produced by the architecture contains a cycle number. (Type test and a runtime check on the fixture.)                                                                 |
 
 ### 5.5 Breakpoints (BRK)
 

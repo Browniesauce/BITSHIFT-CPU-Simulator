@@ -167,6 +167,70 @@ describe('descriptor validation (DATA_CONTRACTS 3.2)', () => {
     );
   });
 
+  it.each([0, -1, 1.5, Number.NaN])('rejects register bits %j', (bits) => {
+    expectInvalid(
+      makeDescriptor('t', {
+        registers: [{ name: 'R0', bits, role: 'general', programmerVisible: true }],
+      }),
+    );
+  });
+
+  it('accepts register bits of 1 and of a width above wordBits (no upper bound)', () => {
+    expectValid(
+      makeDescriptor('t', {
+        registers: [
+          { name: 'R0', bits: 1, role: 'general', programmerVisible: true },
+          { name: 'R1', bits: 64, role: 'general', programmerVisible: true },
+        ],
+      }),
+    );
+  });
+
+  it('rejects two output registers', () => {
+    expectInvalid(
+      makeDescriptor('t', {
+        registers: [
+          { name: 'OUT0', bits: 12, role: 'output', programmerVisible: true },
+          { name: 'OUT1', bits: 12, role: 'output', programmerVisible: true },
+        ],
+      }),
+    );
+  });
+
+  it('accepts exactly one output register', () => {
+    expectValid(
+      makeDescriptor('t', {
+        registers: [
+          { name: 'R0', bits: 12, role: 'general', programmerVisible: true },
+          { name: 'OUT0', bits: 12, role: 'output', programmerVisible: true },
+        ],
+      }),
+    );
+  });
+
+  it('rejects two program-counter registers', () => {
+    expectInvalid(
+      makeDescriptor('t', {
+        registers: [
+          { name: 'P', bits: 10, role: 'program-counter', programmerVisible: true },
+          { name: 'Q', bits: 10, role: 'program-counter', programmerVisible: false },
+        ],
+      }),
+    );
+  });
+
+  it('accepts exactly one program-counter register', () => {
+    expectValid(makeDescriptor('t'));
+  });
+
+  it('accepts a descriptor with neither an output nor a program-counter register', () => {
+    expectValid(
+      makeDescriptor('t', {
+        registers: [{ name: 'R0', bits: 12, role: 'general', programmerVisible: true }],
+      }),
+    );
+  });
+
   it('rejects duplicate flag names', () => {
     expectInvalid(
       makeDescriptor('t', {

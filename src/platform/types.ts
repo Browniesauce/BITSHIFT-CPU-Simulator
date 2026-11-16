@@ -278,8 +278,6 @@ export interface CpuInstance {
   loadProgram(image: ProgramImage): Result<void, Diagnostic>;
   /** Executes one clock cycle, or reports a fault. Never advances any platform counter. */
   stepClock(): StepOutcome;
-  /** Executes cycles up to the next instruction boundary, halt or fault. */
-  stepInstruction(): StepOutcome;
   /** Returns a copy of the externally visible state. Shares no mutable object with the instance. */
   readState(): CpuStateCopy;
 }

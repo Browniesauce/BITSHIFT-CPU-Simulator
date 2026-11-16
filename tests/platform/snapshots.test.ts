@@ -14,12 +14,12 @@ function makeCopy(): CpuStateCopy {
   return {
     programCounter: 5,
     registers: [
-      { name: 'A', bits: 12, value: 0xabc },
-      { name: 'PC', bits: 12, value: 5 },
+      { name: 'R0', bits: 12, value: 0xabc },
+      { name: 'P', bits: 12, value: 5 },
     ],
     flags: [
-      { name: 'Z', value: true },
-      { name: 'C', value: false },
+      { name: 'F0', value: true },
+      { name: 'F1', value: false },
     ],
     memory: Uint8Array.from(MEMORY_BYTES),
   };
@@ -53,12 +53,12 @@ describe('buildSnapshot field values', () => {
   it('copies register and flag values equal to the inputs', () => {
     const snap = buildSnapshot(makeCopy(), META);
     expect(snap.registers).toEqual([
-      { name: 'A', bits: 12, value: 0xabc },
-      { name: 'PC', bits: 12, value: 5 },
+      { name: 'R0', bits: 12, value: 0xabc },
+      { name: 'P', bits: 12, value: 5 },
     ]);
     expect(snap.flags).toEqual([
-      { name: 'Z', value: true },
-      { name: 'C', value: false },
+      { name: 'F0', value: true },
+      { name: 'F1', value: false },
     ]);
   });
 
@@ -159,7 +159,7 @@ describe('buildSnapshot input isolation', () => {
   it('does not change the snapshot when the input register array is replaced', () => {
     const copy = makeCopy();
     const snap = buildSnapshot(copy, META);
-    (copy.registers as RegisterValue[])[1] = { name: 'PC', bits: 12, value: 99 };
+    (copy.registers as RegisterValue[])[1] = { name: 'P', bits: 12, value: 99 };
     expect(snap.registers[1]?.value).toBe(5);
   });
 

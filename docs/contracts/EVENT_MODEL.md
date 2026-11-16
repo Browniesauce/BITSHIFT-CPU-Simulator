@@ -199,7 +199,7 @@ export interface InstructionRecord {
 }
 
 export interface StateChange {
-  readonly target: string; // register name, flag name, or 'memory[<address>]'
+  readonly target: string; // register name, flag name, or 'memory[<address>]' (decimal address, no padding, for example 'memory[16]')
   readonly before: number | boolean;
   readonly after: number | boolean;
 }
@@ -211,7 +211,8 @@ export type TimelineEntry = InstructionRecord;
 **Construction rules:**
 
 - A record starts at `instruction-start` and ends at the matching `instruction-end`.
-- `changes` lists every state-changing event between them, in order: `register-write` (target = register name), `flag-update` (target = flag name), `memory-write` (target = `memory[address]`) and `output-emitted` (target = the output register's name).
+- `changes` lists every state-changing event between them, in order: `register-write` (target = register name), `flag-update` (target = flag name), `memory-write` (target = `memory[<address>]`, decimal, DR-077 f) and `output-emitted` (target = the output register's name).
+- The platform never sets `explanation` and never calls `explainInstruction` (DR-077 g). The display layer fills it.
 - `explanation` is filled by calling the architecture's optional function, at display time, when it exists. If it does not exist, or returns `undefined`, the UI shows generic fallback text.
 - `index` restarts at 0 after `load` and `reset`.
 - Records are immutable and forward-only. There is no backward navigation in v1.0 (EX-05).

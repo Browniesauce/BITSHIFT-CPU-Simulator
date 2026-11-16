@@ -39,18 +39,18 @@ flowchart TB
   R["Run batch<br/>up to N clock cycles<br/>(UI-requested)"] --> I
 ```
 
-| Term                 | Definition                                                       | Requested by            | Counted in                    |
-| -------------------- | ---------------------------------------------------------------- | ----------------------- | ----------------------------- |
-| **Micro-operation**  | One atomic transfer, ALU action or memory access inside a cycle  | Architecture (internal) | Not counted by the platform   |
-| **Clock cycle**      | One unit of simulated time. The platform's counter counts these. | —                       | `ClockCycle` (platform)       |
-| **Instruction**      | All cycles from one instruction boundary to the next             | —                       | `InstructionRecord` (history) |
-| **Clock step**       | Request to advance exactly one cycle                             | `stepClock()`           | Cycle counter                 |
-| **Instruction step** | Request to advance to the next instruction boundary              | `stepInstruction()`     | Cycle counter                 |
-| **Run batch**        | Request to run up to `maxCycles` cycles                          | `runBatch(maxCycles)`   | Cycle counter                 |
+| Term                 | Definition                                                       | Requested by                                                         | Counted in                    |
+| -------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------- | ----------------------------- |
+| **Micro-operation**  | One atomic transfer, ALU action or memory access inside a cycle  | Architecture (internal)                                              | Not counted by the platform   |
+| **Clock cycle**      | One unit of simulated time. The platform's counter counts these. | —                                                                    | `ClockCycle` (platform)       |
+| **Instruction**      | All cycles from one instruction boundary to the next             | —                                                                    | `InstructionRecord` (history) |
+| **Clock step**       | Request to advance exactly one cycle                             | `stepClock()`                                                        | Cycle counter                 |
+| **Instruction step** | Request to advance to the next instruction boundary              | Controller `stepInstruction()`, composed from `stepClock()` (DR-074) | Cycle counter                 |
+| **Run batch**        | Request to run up to `maxCycles` cycles                          | `runBatch(maxCycles)`                                                | Cycle counter                 |
 
 Rules:
 
-1. **Not interchangeable.** A clock step is not an instruction step. An instruction step is not the same as taking all of its clock steps.
+1. **Not interchangeable.** A clock step is not an instruction step. The two are different requests, and an instruction step produces exactly the state, events and cycle count of the clock steps it is made of.
 2. **Micro-operations are internal.** The platform never sees a micro-operation as a unit of work. It sees cycles and the events the architecture attaches to them.
 3. **One micro-operation per cycle is the BITSHIFT-8 model (DR-053, approved with qualification).** The platform does not enforce it. A future architecture declares its own execution semantics (CPU strategy §8.2).
 
@@ -90,6 +90,9 @@ stateDiagram-v2
   running --> faulted: fault reported
   paused --> halted: halt reported
   paused --> faulted: fault reported
+  ready --> faulted: fault reported (architecture exception outside a step)
+  halted --> faulted: fault reported (architecture exception outside a step)
+  faulted --> faulted: fault reported (architecture exception outside a step)
   halted --> ready: reset
   faulted --> ready: reset
   ready --> ready: load program

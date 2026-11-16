@@ -178,7 +178,7 @@ sequenceDiagram
   participant I as CPU instance (C)
   U->>F: clock step / instruction step / run
   F->>C: intent (one call)
-  C->>I: stepClock() or stepInstruction()
+  C->>I: stepClock() (once, or repeatedly for an instruction step or a batch)
   I-->>C: StepOutcome { cyclesCompleted, events, halted, fault? }
   C->>C: check breakpoints, update history
   C-->>S: ControllerUpdate { snapshot copy, events }

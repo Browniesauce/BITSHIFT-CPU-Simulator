@@ -48,6 +48,19 @@ function validateDescriptor(descriptor: ArchitectureDescriptor): Diagnostic | un
 
   const registerName = firstDuplicate(descriptor.registers.map((r) => r.name));
   if (registerName !== undefined) return invalid(`Register name "${registerName}" is duplicated.`);
+  for (const register of descriptor.registers) {
+    if (!isPositiveInteger(register.bits)) {
+      return invalid(`Register "${register.name}" bits must be a positive integer.`);
+    }
+  }
+  const outputCount = descriptor.registers.filter((r) => r.role === 'output').length;
+  if (outputCount > 1) return invalid('At most one register may have role "output".');
+  const programCounterCount = descriptor.registers.filter(
+    (r) => r.role === 'program-counter',
+  ).length;
+  if (programCounterCount > 1) {
+    return invalid('At most one register may have role "program-counter".');
+  }
   const flagName = firstDuplicate(descriptor.flags.map((f) => f.name));
   if (flagName !== undefined) return invalid(`Flag name "${flagName}" is duplicated.`);
 

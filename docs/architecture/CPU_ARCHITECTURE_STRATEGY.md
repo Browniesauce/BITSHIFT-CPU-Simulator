@@ -35,18 +35,18 @@ This makes BITSHIFT-16 and RISC-V RV32I (v3.0) possible without changing the pla
 
 The brief requires these to be treated as distinct. Each level has a different owner and a different contract method.
 
-| Level               | What it is                                                               | Owner of the rule                                                                                            | Contract operation      | Returned to platform                                                   |
-| ------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ | ----------------------- | ---------------------------------------------------------------------- |
-| **Micro-operation** | One atomic transfer or ALU action                                        | Architecture                                                                                                 | Internal to `stepClock` | Events describing it                                                   |
-| **Clock cycle**     | The unit of simulated time. For BITSHIFT-8, one micro-operation (DR-053) | Architecture decides what a cycle contains and reports `cyclesCompleted`; platform owns the counter (DR-067) | `stepClock()`           | `StepOutcome` for that cycle                                           |
-| **Instruction**     | All cycles until the next instruction boundary                           | Architecture decides boundaries; platform decides how many to run                                            | `stepInstruction()`     | `StepOutcome` covering several cycles, with `instructionCompleted` set |
+| Level               | What it is                                                               | Owner of the rule                                                                                            | Contract operation                      | Returned to platform                                                 |
+| ------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ | --------------------------------------- | -------------------------------------------------------------------- |
+| **Micro-operation** | One atomic transfer or ALU action                                        | Architecture                                                                                                 | Internal to `stepClock`                 | Events describing it                                                 |
+| **Clock cycle**     | The unit of simulated time. For BITSHIFT-8, one micro-operation (DR-053) | Architecture decides what a cycle contains and reports `cyclesCompleted`; platform owns the counter (DR-067) | `stepClock()`                           | `StepOutcome` for that cycle                                         |
+| **Instruction**     | All cycles until the next instruction boundary                           | Architecture decides boundaries; platform decides how many to run                                            | Controller, from `stepClock()` (DR-074) | One `StepOutcome` per cycle; the last has `instructionCompleted` set |
 
 Rules:
 
 - The platform never looks inside an instruction. It only asks for cycles or instruction boundaries.
 - The platform does not check how many micro-operations a cycle contains. That is an architecture rule (DR-053 qualification).
 - The architecture reports `cyclesCompleted`, the work done in a step. It never reports a cycle number. The platform owns the only counter (DR-067).
-- An architecture implements `stepInstruction` in terms of its own cycles. It must not skip micro-operation events when it does so.
+- The architecture has no instance-level instruction step. The platform composes an instruction step from `stepClock()` calls until a step reports `instructionCompleted`, a halt or a fault (DR-074).
 - A clock step at an instruction boundary starts the next instruction. This is consistent with "instruction step ends at a boundary".
 
 ## 4. Platform and CPU Contract (conceptual)
@@ -61,7 +61,6 @@ This section describes the operations and their meaning. The exact TypeScript in
 | `loadProgram(image)` | Writes the program bytes at the origin and sets the entry PC                                             | `Result` error if the image does not fit, the origin is invalid, or the architecture ID does not match. State unchanged. |
 | `reset()`            | Restores post-load state (registers, flags, PC, memory as loaded)                                        | Cannot fail                                                                                                              |
 | `stepClock()`        | Executes one clock cycle                                                                                 | Illegal state → fault outcome                                                                                            |
-| `stepInstruction()`  | Executes cycles to the next instruction boundary, or to halt or fault                                    | As above                                                                                                                 |
 | `readState()`        | Returns an architecture state copy that shares no mutable object with the instance (DATA_CONTRACTS §4.1) | Cannot fail                                                                                                              |
 | `readMemory(range)`  | Returns a copy of part of memory for inspectors                                                          | `Result` error for out-of-range requests                                                                                 |
 
@@ -79,11 +78,9 @@ sequenceDiagram
   I-->>P: Result ok
   P->>I: stepClock()
   I-->>P: StepOutcome { cyclesCompleted: 1, events: [micro-operation, bus-transfer, ...] }
-  P->>I: stepInstruction()
-  loop until boundary, halt or fault
-    I->>I: execute one cycle internally
-  end
-  I-->>P: StepOutcome { cyclesCompleted: n, instructionCompleted: true, halted: false, events }
+  Note over P,I: An instruction step is composed by the platform from repeated stepClock() calls (DR-074).
+  P->>I: stepClock()
+  I-->>P: StepOutcome { cyclesCompleted: 1, instructionCompleted: true, halted: false, events }
   P->>I: readState()
   I-->>P: CpuStateCopy (copy)
   Note over P,I: If the architecture reaches HLT, it reports `halted: true`.<br/>If it finds an illegal state, it returns a `fault` with a Diagnostic and `cyclesCompleted` 0.

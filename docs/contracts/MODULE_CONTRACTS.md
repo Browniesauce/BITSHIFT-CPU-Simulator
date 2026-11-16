@@ -127,6 +127,7 @@ export function createArchitectureRegistry(
 - **Responsibility:** validates the supplied architectures and provides lookup by identifier. It holds no architecture-specific knowledge.
 - **Errors:** `ARCH-DUPLICATE-ID` when two entries share an identifier. `ARCH-INVALID-DESCRIPTOR` when a descriptor fails validation (DATA_CONTRACTS §3.2). `ARCH-UNKNOWN-ID` from `lookup`.
 - **Ownership:** platform. The list is owned by the composition root.
+- **Empty list:** an empty list is valid (DR-079). `architectures` is then empty and every `lookup` returns `ARCH-UNKNOWN-ID`.
 - **Dependencies:** platform types only. It imports no architecture module (DEP-01).
 - **Mode:** synchronous.
 
@@ -142,8 +143,21 @@ export type LifecycleAction =
 export function nextState(current: CpuState, action: LifecycleAction): Result<CpuState, Diagnostic>;
 ```
 
-- **Responsibility:** the lifecycle state machine. The transition table is in SIMULATION_PLATFORM §3.
-- **Errors:** `PLT-RUNNING`, `PLT-NOT-RUNNING`, `PLT-ALREADY-RUNNING` for forbidden actions.
+- **Responsibility:** the lifecycle state machine (DR-077 b). The full transition table is below; SIMULATION_PLATFORM §3 gives the diagram.
+- **Errors:** `PLT-RUNNING`, `PLT-NOT-RUNNING`, `PLT-ALREADY-RUNNING` for forbidden actions. `PLT-INTERNAL` for a `halt` action in `ready`, `halted` or `faulted`, which a correct controller never requests.
+
+| Action                           | ready             | running               | paused            | halted            | faulted           |
+| -------------------------------- | ----------------- | --------------------- | ----------------- | ----------------- | ----------------- |
+| `load`                           | ready             | `PLT-RUNNING`         | ready             | ready             | ready             |
+| `reset`                          | ready             | ready                 | ready             | ready             | ready             |
+| `begin-run`                      | running           | `PLT-ALREADY-RUNNING` | running           | halted            | faulted           |
+| `end-run`                        | `PLT-NOT-RUNNING` | paused                | `PLT-NOT-RUNNING` | `PLT-NOT-RUNNING` | `PLT-NOT-RUNNING` |
+| `clock-step`, `instruction-step` | paused            | `PLT-RUNNING`         | paused            | halted            | faulted           |
+| `halt`                           | `PLT-INTERNAL`    | halted                | halted            | `PLT-INTERNAL`    | `PLT-INTERNAL`    |
+| `fault`                          | faulted           | faulted               | faulted           | faulted           | faulted           |
+
+A step taken from `ready` applies the step action first (to `paused`), then `halt` or `fault` if the outcome reports one.
+
 - **Ownership:** platform. Only the controller calls it.
 - **Dependencies:** platform types.
 - **Mode:** synchronous and pure.
@@ -372,8 +386,6 @@ export interface CpuInstance {
   loadProgram(image: ProgramImage): Result<void, Diagnostic>;
   /** Executes one clock cycle, or reports a fault. Never advances any platform counter. */
   stepClock(): StepOutcome;
-  /** Executes cycles up to the next instruction boundary, halt or fault. */
-  stepInstruction(): StepOutcome;
   /** Returns a copy of the externally visible state. Shares no mutable object with the instance. */
   readState(): CpuStateCopy;
 }
@@ -390,7 +402,7 @@ export interface CpuInstance {
 
 **Normative rules for implementers:**
 
-1. A step that faults returns `cyclesCompleted` 0, no events and `fault` set (DATA_CONTRACTS §5).
+1. A step that faults returns `cyclesCompleted` 0, no events and `fault` set (DATA_CONTRACTS §5). A step that faults also leaves `readState()` unchanged.
 2. `readState` returns fresh arrays and a fresh `memory` copy every call.
 3. The instance does not log in normal operation and does not read the clock.
 4. Program memory writes come only from `loadProgram` (DR-029).

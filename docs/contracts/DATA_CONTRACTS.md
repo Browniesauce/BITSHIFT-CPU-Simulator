@@ -119,6 +119,8 @@ The descriptor contains **no functions**. The factory `createInstance()` belongs
 - `isa.architectureId` is a valid identifier.
 - Sizes are positive integers, and `memoryBytes` ≤ 2^`addressBits`.
 - Register names and flag names are unique within their lists.
+- Every register's `bits` is a positive integer (DR-079).
+- At most one register has role `'output'`, and at most one has role `'program-counter'` (DR-078 b).
 - Instruction `(mnemonic, variant)` pairs are unique, and opcodes are unique and fit in `wordBits`.
 
 ### 3.3 Program Counter (SC-14 deferred; DR-022 proposed)
@@ -230,8 +232,8 @@ export interface StepOutcome {
 
 **Invariants (normative):**
 
-1. If `fault` is present, then `cyclesCompleted` is 0, `halted` is false and `events` is empty. A faulting step completes no cycle.
-2. `cyclesCompleted` is a non-negative integer. A `stepClock` call returns 0 or 1. A `stepInstruction` call returns any non-negative integer.
+1. If `fault` is present, then `cyclesCompleted` is 0, `halted` is false and `events` is empty. A faulting step completes no cycle, and the architecture's state is unchanged.
+2. `cyclesCompleted` is a non-negative integer. A `stepClock` call returns 0 or 1.
 3. Each event's `cycleOffset` is an integer from 1 to `cyclesCompleted`, inclusive.
 4. A `StepOutcome` contains no authoritative cycle count, no cycle number and no breakpoint information (SC-10, amended).
 
