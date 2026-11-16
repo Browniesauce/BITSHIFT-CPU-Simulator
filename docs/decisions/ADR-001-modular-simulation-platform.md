@@ -72,8 +72,8 @@ Platform implementation is **not started** until this ADR and the platform-relev
 
 ## Open Points
 
-- Whether architectures may define their own event kinds (DR-014).
-- Whether the ISA descriptor is data-only (DR-015).
+- Resolved: architectures may define namespaced event kinds (DR-014, approved).
+- Resolved: the ISA descriptor is data-only (DR-015, approved).
 - Whether the platform requires a PC in every architecture (DR-022).
 
 Tracked in [DECISION_REGISTER.md](DECISION_REGISTER.md).

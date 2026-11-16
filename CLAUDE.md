@@ -1,163 +1,141 @@
 # CLAUDE.md — BITSHIFT
 
-Project instructions for Claude Code. Read this first in every session.
+Engineering guide for Claude Code. Read this first in every session. It points to the authoritative documents rather than repeating them. When this file and a document disagree, the document wins, and the disagreement is reported.
 
-## 1. What BITSHIFT Is
+## 1. Project
 
-BITSHIFT is a browser-based educational computer architecture simulator. Learners write assembly programs, run them on virtual CPUs, and watch instructions move through registers, the ALU, memory and buses. The product prioritises educational clarity, accurate simulation, interactive execution, visual understanding, modular architecture and maintainable engineering.
+BITSHIFT is a browser-based educational computer architecture simulator. Learners write assembly, run it on a virtual CPU, and watch instructions move through registers, the ALU, memory and buses. There is no backend. Everything runs in the browser.
 
-No backend. Everything runs in the browser.
+Product definition: `docs/product/PRODUCT_SPEC.md`, `MVP_SCOPE.md`, `RELEASE_ROADMAP.md`.
 
-## 2. Current Release and Phase
+## 2. Where the Project Is
 
-- **Release:** v1.0 (Polished MVP). Only v1.0 is authorised for implementation planning.
-- **Phase:** Phase 0 — Product & Architecture Foundation. Its goal is documentation and repository foundation. **No CPU, ALU, assembler, datapath or debugger code is to be written in Phase 0.**
-- **Status:** Phase 0 documents are drafts awaiting product-owner review. See `docs/decisions/DECISION_REGISTER.md`.
+- **Release:** v1.0, BITSHIFT-8 simulator. Only v1.0 is authorised for planning and implementation. v2.0 to v4.0 are directions only.
+- **Phase:** Phase 0 (product and architecture foundation). Stages 0.1 to 0.3 are complete and awaiting product-owner acceptance. **Stage 0.4 has not started.**
+- **Application code:** none. `src/` contains only the placeholder shell. Do not write simulator code until the phase that owns it has started and its prerequisites are approved.
 
-## 3. Technology Stack
+## 3. Hierarchy and Workflow
 
-The stack is **proposed**, not yet approved (decision DR-039). Use only what is installed, unless the stack document says a package is planned for a later phase.
+Work is organised as **Phase → Stage → Slice → Task** (`docs/engineering/DEFINITION_OF_DONE.md` §1).
 
-| Area            | Tool                                                           | Installed now  |
-| --------------- | -------------------------------------------------------------- | -------------- |
-| Frontend        | React                                                          | Yes            |
-| Language        | TypeScript (5.9.x)                                             | Yes            |
-| Build           | Vite                                                           | Yes            |
-| Styling         | Tailwind CSS (deferred, DR-065)                                | Frontend stage |
-| State           | None; React native state (DR-054, approved)                    | —              |
-| Animation       | CSS and SVG first (DR-055, approved); Motion deferred (DR-064) | Phase 4        |
-| Datapath        | Native SVG                                                     | n/a            |
-| Editor          | CodeMirror 6                                                   | Phase 3        |
-| Tests           | Vitest                                                         | Yes            |
-| Format          | Prettier                                                       | Yes            |
-| Package manager | pnpm 9                                                         | Yes            |
-| Dev environment | Dev Container (Node 22)                                        | Yes            |
+1. Find the stage in `docs/engineering/DEVELOPMENT_ROADMAP.md`. Read its objective, deliverables and acceptance criteria.
+2. Read the contracts and architecture documents that the stage touches, before changing anything. Name them in the report.
+3. Check the decision register for every open item the work depends on. An item marked **Open**, **Proposed** or **Deferred** is not treated as approved.
+4. Implement one slice at a time. Each acceptance criterion gets a test (`docs/engineering/TEST_STRATEGY.md`).
+5. Finish with the implementation report (`DEFINITION_OF_DONE.md` §6).
 
-Full rationale and dependency plan: `docs/architecture/TECHNOLOGY_STACK.md`.
+**Do not implement future stages early.** If a task needs work from a later stage, stop and report the dependency.
 
-## 4. Architecture Principles
+## 4. Approved Decisions That Shape the Code
 
-1. Simulation logic is independent of React and the DOM.
-2. Simulation is deterministic: no time, randomness or unordered output in simulation code.
-3. UI components never modify CPU internals. They send intents to the execution controller and read immutable snapshots.
-4. Snapshots and execution events are explicitly typed and copied across boundaries.
-5. Each architecture implements its own hardware semantics. Shared code does not assume identical registers, word sizes or instruction formats.
-6. Prefer simple modules and interfaces over plugin frameworks, containers or services.
+Authoritative list: `docs/decisions/DECISION_REGISTER.md`. The main ones:
 
-Subsystem map and dependency rules: `docs/architecture/SYSTEM_ARCHITECTURE.md`.
+- **Platform owns the only cycle counter** (DR-067). Architectures report `cyclesCompleted`; they never report a cycle number. Failed steps advance nothing.
+- **Architecture identity has one source:** the ISA's `architectureId`. The descriptor has no separate `id` (SC-30, Stage 0.3 reading).
+- **Descriptors are data-only.** `createInstance()` belongs to `CpuArchitecture` (DR-015).
+- **Architecture selection happens at initialization.** No runtime switching in v1.0 (SC-D3).
+- **Architectures are registered in the composition root** `src/app/` (DR-057). The platform imports no concrete architecture.
+- **The platform has no timers.** The UI calls `runBatch` (DR-058).
+- **Breakpoints are platform-owned.** The CPU never sees them and never reports them (SC-10).
+- **State:** React's native mechanisms through `useSyncExternalStore`. No state library (DR-054). Animation is CSS and SVG first (DR-055); Motion is deferred (DR-064).
+- **Explanations are optional metadata** and never affect execution (DR-061).
+- **Persistence** lives in the application layer (DR-063).
 
-## 5. Documentation Is the Source of Truth
+## 5. Architecture Boundaries
 
-Read the relevant document before changing architecture or code:
+Subsystem map and dependency rules: `docs/architecture/SYSTEM_ARCHITECTURE.md` §3 and §6. In short:
 
-| Topic                            | Document                                                             |
-| -------------------------------- | -------------------------------------------------------------------- |
-| Product and scope                | `docs/product/PRODUCT_SPEC.md`, `MVP_SCOPE.md`, `RELEASE_ROADMAP.md` |
-| System design                    | `docs/architecture/`                                                 |
-| Contracts (types and interfaces) | `docs/contracts/`                                                    |
-| CPU specification                | `docs/specifications/BITSHIFT-8_ISA.md` (DRAFT)                      |
-| Coding, testing, done criteria   | `docs/engineering/`                                                  |
-| Roadmap                          | `docs/engineering/DEVELOPMENT_ROADMAP.md`                            |
-| Open and approved decisions      | `docs/decisions/DECISION_REGISTER.md`                                |
+- `src/platform`, `src/architectures`, `src/assembler` contain no React, DOM, timers, randomness or UI or animation libraries.
+- `src/architectures/<id>` imports only platform types. Architectures never import each other.
+- `src/assembler` receives the ISA as an argument and touches no CPU instance.
+- `src/visualization` consumes snapshots, events and view-model adapters. It never mutates CPU state and never invents state changes.
+- Only `src/app` imports concrete architectures and the assembler.
 
-Categories used throughout the docs:
+These boundaries are checked by the Phase 1 import test and by review.
 
-- **[A]** established by the product owner;
-- **[B]** proposed, pending approval;
-- **[C]** unresolved, needs review.
+## 6. Contracts
 
-Never treat a [B] or [C] item as final.
+Shared types and interfaces: `docs/contracts/`. Their authority:
 
-## 6. Repository Structure
+| Document              | Covers                                                                 |
+| --------------------- | ---------------------------------------------------------------------- |
+| `DATA_CONTRACTS.md`   | Shared data types, ownership, mutability, diagnostic codes             |
+| `MODULE_CONTRACTS.md` | Public interface of every subsystem, error behaviour, synchronous mode |
+| `EVENT_MODEL.md`      | Event shapes, cycle assignment, ordering, replay invariant             |
 
-```
-.claude/            Claude Code configuration and commands
-.devcontainer/      Dev Container definition
-docs/               Documentation (source of truth)
-  product/  architecture/  specifications/  contracts/  engineering/  decisions/
-src/
-  app/              Application shell
-  platform/         Simulation platform: registry, lifecycle, controller, events, snapshots
-  architectures/    One folder per CPU (bitshift-8/ in v1.0)
-  assembler/        Source text to program image
-  visualization/    SVG datapath and view models
-  features/         Workbench features (Phase 5)
-  components/       Shared UI components
-  store/            UI state adapter (Phase 5)
-tests/              Mirrors src/: platform, architectures, assembler, integration
-public/             Static assets
-```
+Rules:
 
-Empty directories are kept with `.gitkeep` or `README.md`. Do not create speculative files.
+- Do not change a contract silently. A contract change is a register decision first, then the document, then the code, in one change.
+- Diagnostic codes are listed in `DATA_CONTRACTS.md` §11 before they are used.
+- Errors follow three classes: `Result` errors for caller mistakes, faults for simulated CPU conditions, and exceptions for programmer errors (`SIMULATION_PLATFORM.md` §9).
 
-## 7. Coding Conventions
+## 7. Conventions
 
-Full rules in `docs/engineering/CODING_STANDARDS.md`. Summary:
+Full rules: `docs/engineering/CODING_STANDARDS.md`. Summary:
 
-- TypeScript `strict`. No `any`. Explain every non-null `!`.
-- Files: kebab-case for modules, PascalCase for React components.
-- Event kinds and architecture IDs: kebab-case.
-- Mask 8-bit arithmetic explicitly.
-- Errors at API boundaries are `Result` values with `Diagnostic`s. Exceptions are for programmer errors only.
-- Dependency rules: `src/platform`, `src/architectures` and `src/assembler` never import React, DOM, Zustand, Motion or Tailwind.
-- Format with `pnpm format`. LF line endings, 2-space indentation.
+- TypeScript `strict`. No `any`. Use `readonly` on shared types. No enums. No default exports in `src/`.
+- Terminology: `cycle` and `ClockCycle`, never `tick` or `Tick`. Use the terms in CODING_STANDARDS §3.2.
+- Published values are frozen; inputs are never mutated; memory is copied at each boundary.
+- Format with `pnpm format`. LF line endings.
+- No dependency without a row in `docs/architecture/TECHNOLOGY_STACK.md` §4.2 in the same change.
 
-## 8. Testing Requirements
+## 8. Testing
 
-Full strategy in `docs/engineering/TEST_STRATEGY.md`. Summary:
+Full strategy: `docs/engineering/TEST_STRATEGY.md`. Summary:
 
-- Every implementation slice has testable acceptance criteria written before the code.
-- Tests state expected values from the spec, not from the implementation output.
-- Every instruction and flag rule has a test once Phase 2 begins.
-- Determinism is tested: same input, same snapshots and events.
+- Platform, architecture, assembler and visualization logic is tested in Node, without React or a browser.
+- Snapshot isolation, determinism, event ordering and the replay invariant, cycle counting, history limits, error handling and breakpoints each have named tests (sections 5.1 to 5.9 of that document).
+- Expected values come from the specification, never from the implementation's output.
 - Commands: `pnpm test`, `pnpm typecheck`, `pnpm format:check`, `pnpm build`.
 
-## 9. Reporting Implementation Changes
+## 9. Documentation Rules
 
-After each implementation slice, report:
+- Categories: **[A]** established by the product owner; **[B]** proposed; **[C]** open. A proposal is never presented as final.
+- Decision IDs are kept. Do not delete a historical decision. Mark it superseded and say by what.
+- Before finishing a documentation change, check links, `DR-` references and formatting (`DEFINITION_OF_DONE.md` §5).
+- Do not modify product requirements, or the approved roadmap, without the product owner's approval recorded in the register.
+
+## 10. Reporting
+
+After each task or slice, report (`DEFINITION_OF_DONE.md` §6):
 
 1. What was built, in a short paragraph.
-2. Files created or changed (with paths).
-3. Acceptance criteria and their test results.
-4. Validation commands run and their results. If a command was not run, say so and say why.
-5. Decisions made, labelled [A], [B] or [C].
-6. Unresolved issues and the recommended next step.
+2. Files changed, with paths.
+3. Acceptance criteria, the tests that cover them, and their results.
+4. Validation commands run and their results. Anything not run is reported as not run.
+5. Decisions, labelled approved, proposed or open, with register IDs.
+6. Unresolved issues and the next step.
 
-Do not describe anything as passing unless you ran it and saw it pass.
+Do not describe anything as passing unless it was run and seen to pass.
 
-## 10. Handling Architecture Changes
+## 11. Standing Rules
 
-1. Read the relevant contract and ADRs.
-2. If the change alters a shared contract, a module boundary or the stack, stop and write the proposal into `docs/decisions/DECISION_REGISTER.md` (as [B] or [C]). Record an ADR if the change is significant.
-3. Do not change an approved contract silently. Update the contract document in the same change as the code, and say so in the report.
-4. If a spec is ambiguous or contradicts another document, report the contradiction. Do not guess. Do not invent opcodes, flags or instruction semantics.
-
-## 11. Permanent Rules
-
-1. Read relevant documentation before modifying architecture or code.
-2. Never silently change an approved architecture contract.
-3. Report contradictions rather than guessing.
-4. Do not introduce dependencies without justification. Add a row to `TECHNOLOGY_STACK.md` section 4 in the same change.
-5. Keep simulation independent of presentation.
-6. Do not implement future-release features in v1.
-7. Every implementation slice has testable acceptance criteria.
-8. Do not overwrite existing files without inspecting them.
+1. Read the relevant documents before changing architecture or code.
+2. Never silently change an approved contract or decision.
+3. Report contradictions. Do not guess between two documents.
+4. Do not introduce dependencies without a justification and a stack row.
+5. Keep the simulation independent of presentation.
+6. Do not implement future-release or future-stage features.
+7. Every slice has testable acceptance criteria.
+8. Do not overwrite a file without reading it first.
 9. Prefer minimal, maintainable solutions.
-10. Report completed work, changed files, validation results and unresolved issues.
+10. Do not invent BITSHIFT-8 instructions, flags, cycle counts, micro-operation sequences or control-signal names. Those come from the Phase 2 specification (DR-001 to DR-018, DR-011, DR-013).
 
 ## 12. Out of Scope for v1.0
-
-Do not build, stub or design in detail:
 
 - Microcode visualization, interrupts, I/O devices, advanced debugging, reverse execution, cache and pipeline visualization, custom CPU configurations, digital logic exploration (v2.0).
 - BITSHIFT-16 and RISC-V RV32I (v3.0).
 - Guided lessons, shareable programs, tutorials, user-created architectures (v4.0).
-- Any backend, accounts or cloud storage.
-- Mobile and touch layouts.
+- Any backend, accounts or cloud storage. Mobile and touch layouts.
+- AI-generated explanations or tutoring.
 
-Full list: `docs/product/MVP_SCOPE.md` section 2.
+Full list: `docs/product/MVP_SCOPE.md` §3.
 
-## 13. Slash Commands
+## 13. Stack Status
 
-- `/validate-docs` — documentation consistency check.
-- `/audit-stage <n>` — audit a roadmap stage against its acceptance criteria.
+The technology stack is **proposed**; its approval is pending (DR-039). The approved items are: no state library (DR-054) and CSS-first animation (DR-055). Deferred: Motion (DR-064) and Tailwind (DR-065). Current stack and the dependency plan: `docs/architecture/TECHNOLOGY_STACK.md`.
+
+## 14. Slash Commands
+
+- `/validate-docs`: documentation consistency check.
+- `/audit-stage <n>`: audit a roadmap stage against its acceptance criteria.

@@ -135,7 +135,7 @@ Signed overflow is not tracked. There is no V flag in the brief (DR-008).
 2. **Decode:** identify instruction length from IR. If 2 bytes, fetch the operand (same pattern as fetch, using PC).
 3. **Execute:** perform the instruction's micro-operations.
 
-These micro-operations are a proposal for illustration. The exact sequence and tick count per instruction is open (DR-011).
+These micro-operations are a proposal for illustration. The exact sequence and cycle count per instruction is open (DR-011).
 
 ### 8.2 Timing
 

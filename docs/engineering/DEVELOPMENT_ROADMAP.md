@@ -66,7 +66,7 @@ This roadmap is a sequence of stages, not a task list. Slices are suggested grou
 ### Stage 1.1 — Shared Primitives
 
 - **Objective:** Create the small shared types and utilities used everywhere.
-- **Scope:** `Result`, `Diagnostic`, `SourceSpan`, `Tick`, identifiers, memory range helpers.
+- **Scope:** `Result`, `Diagnostic`, `SourceSpan`, `ClockCycle`, identifiers, memory range helpers.
 - **Suggested slices:** (1) `Result` helpers; (2) diagnostic and span types; (3) memory-range validation.
 - **Dependencies:** Phase 0.
 - **Deliverables:** `src/platform/` shared module; tests in `tests/platform/`.
@@ -142,17 +142,17 @@ This roadmap is a sequence of stages, not a task list. Slices are suggested grou
 - **Scope:** Full instruction table from the approved ISA; ISA descriptor for the assembler.
 - **Suggested slices:** (1) instruction table; (2) decoder; (3) undefined opcode fault.
 - **Dependencies:** 2.1, approved opcode allocation.
-- **Deliverables:** `isa.ts`, `decode.ts`, descriptor.
-- **Acceptance criteria:** Every approved opcode decodes to its mnemonic and length; every unallocated opcode produces the approved fault.
+- **Deliverables:** `isa.ts`, `decode.ts`, descriptor, and concise explanation metadata for each supported instruction (MVP-022; DR-045, approved for v1.0; optional metadata, no AI-generated text).
+- **Acceptance criteria:** Every approved opcode decodes to its mnemonic and length; every unallocated opcode produces the approved fault. Every supported instruction has an explanation entry (AC-022-1). Removing all explanation entries leaves execution results unchanged (AC-022-3).
 
 ### Stage 2.4 — Micro-Operations & Execution Sequencing
 
 - **Objective:** Clock-level execution of fetch, decode and execute.
-- **Scope:** Micro-operation sequences per instruction; `stepMicroOperation` and `stepInstruction`; events emitted per EVENT_MODEL.
+- **Scope:** Micro-operation sequences per instruction; `stepClock` and `stepInstruction`; events emitted per EVENT_MODEL.
 - **Suggested slices:** (1) fetch micro-operations; (2) execute micro-operations for each instruction group; (3) event emission.
 - **Dependencies:** 2.2, 2.3, approved micro-operation representation (DR-013).
 - **Deliverables:** Instance, microcode, snapshot modules.
-- **Acceptance criteria:** Tick count per instruction matches DR-011; each micro-operation emits its documented events; snapshots match state after every step.
+- **Acceptance criteria:** Cycle count per instruction matches DR-011; each micro-operation emits its documented events; snapshots match state after every step.
 
 ### Stage 2.5 — Conformance Suite & Reference Programs
 
@@ -304,11 +304,11 @@ This roadmap is a sequence of stages, not a task list. Slices are suggested grou
 ### Stage 5.4 — Execution Timeline Navigation
 
 - **Objective:** Timeline panel with selection and detail.
-- **Scope:** Timeline list, selecting an entry shows its events. Forward-only (reverse stepping is out of scope).
+- **Scope:** Timeline list, selecting an entry shows its events. Forward-only (reverse stepping is out of scope). Entry detail shows the instruction explanation (MVP-022; DR-045, approved), with generic fallback text when none exists.
 - **Suggested slices:** (1) list view; (2) entry detail; (3) clear and restart behaviour.
 - **Dependencies:** 4.5, 5.3.
 - **Deliverables:** Timeline feature.
-- **Acceptance criteria:** Entries match executed instructions; the UI never implies backward execution.
+- **Acceptance criteria:** Entries match executed instructions; the UI never implies backward execution. Explanations display for every supported instruction, and generic fallback text appears where none exists (AC-022-2, AC-022-4).
 
 ### Stage 5.5 — Basic Debugging
 

@@ -117,11 +117,11 @@ A release moves to planning only when:
 
 ## 7. Consistency Check (Stage 0.1)
 
-| Check                                                         | Result                                                     |
-| ------------------------------------------------------------- | ---------------------------------------------------------- |
-| Every v1.0 feature in the product vision appears in MVP_SCOPE | Pass                                                       |
-| Every MVP feature maps to a roadmap stage                     | Pass, except MVP-022, which needs a stage (MVP_SCOPE Q-02) |
-| No v2–v4 capability appears as a v1.0 feature                 | Pass. Only "v1.0 constraints" mention later releases.      |
-| Release names and scope match PRODUCT_SPEC and MVP_SCOPE      | Pass                                                       |
-| Phases and stages apply only to v1.0                          | Pass; DEVELOPMENT_ROADMAP has no v2–v4 stages              |
-| Non-goals in the brief each have a release or "not planned"   | Pass; see MVP_SCOPE section 3                              |
+| Check                                                         | Result                                                       |
+| ------------------------------------------------------------- | ------------------------------------------------------------ |
+| Every v1.0 feature in the product vision appears in MVP_SCOPE | Pass                                                         |
+| Every MVP feature maps to a roadmap stage                     | Pass (MVP-022 mapped to Stages 2.3 and 5.4, DR-045 approved) |
+| No v2–v4 capability appears as a v1.0 feature                 | Pass. Only "v1.0 constraints" mention later releases.        |
+| Release names and scope match PRODUCT_SPEC and MVP_SCOPE      | Pass                                                         |
+| Phases and stages apply only to v1.0                          | Pass; DEVELOPMENT_ROADMAP has no v2–v4 stages                |
+| Non-goals in the brief each have a release or "not planned"   | Pass; see MVP_SCOPE section 3                                |

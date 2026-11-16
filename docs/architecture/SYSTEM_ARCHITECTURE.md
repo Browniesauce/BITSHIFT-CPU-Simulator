@@ -121,18 +121,18 @@ Why the composition root: the platform, assembler and visualization must stay ig
 
 ## 7. State Ownership
 
-| State                                                                        | Owner                                               | Read by                    | Written by                         | Rule                                                |
-| ---------------------------------------------------------------------------- | --------------------------------------------------- | -------------------------- | ---------------------------------- | --------------------------------------------------- |
-| Architecture-specific CPU state (registers, memory, flags, internal latches) | Architecture instance (C)                           | Snapshot builder only      | Instance step methods only         | No other module holds a reference                   |
-| Execution coordination (lifecycle state, tick counter, batch position)       | Controller (B)                                      | Store, features            | Controller methods                 | UI requests changes through controller methods only |
-| Breakpoint set                                                               | Controller (B)                                      | Controller                 | Controller, on UI intent           | Breakpoints are not CPU data                        |
-| Execution history (instruction records)                                      | History module (B)                                  | Timeline view, debugger    | Controller, after each instruction | Bounded; forward only                               |
-| Program image and source map                                                 | Assembler output, held by the controller after load | Controller, editor markers | Assembler (one-time output)        | Immutable after creation                            |
-| Diagnostics                                                                  | Assembler (D)                                       | Editor, diagnostics panel  | Assembler                          | Replaced on each assembly run                       |
-| Copied snapshots and event batches                                           | Store (F), copies from controller                   | Visualization, inspectors  | Store, on controller notification  | Store never keeps a live instance                   |
-| Editor text                                                                  | Editor component (F), persisted by app (A)          | Assembler trigger          | Editor                             | Persisted only in browser storage (DR-048)          |
-| Visual state (animation progress, highlights, layout)                        | Visualization (E) and features (F)                  | Renderer                   | Renderer                           | Derived; never written back to simulation           |
-| Speed preset, panel layout                                                   | Store (F)                                           | UI                         | UI                                 | UI state only; never affects results (DR-046)       |
+| State                                                                            | Owner                                               | Read by                    | Written by                         | Rule                                                |
+| -------------------------------------------------------------------------------- | --------------------------------------------------- | -------------------------- | ---------------------------------- | --------------------------------------------------- |
+| Architecture-specific CPU state (registers, memory, flags, internal latches)     | Architecture instance (C)                           | Snapshot builder only      | Instance step methods only         | No other module holds a reference                   |
+| Execution coordination (lifecycle state, cycle counter (DR-067), batch position) | Controller (B)                                      | Store, features            | Controller methods                 | UI requests changes through controller methods only |
+| Breakpoint set                                                                   | Controller (B)                                      | Controller                 | Controller, on UI intent           | Breakpoints are not CPU data                        |
+| Execution history (instruction records)                                          | History module (B)                                  | Timeline view, debugger    | Controller, after each instruction | Bounded; forward only                               |
+| Program image and source map                                                     | Assembler output, held by the controller after load | Controller, editor markers | Assembler (one-time output)        | Immutable after creation                            |
+| Diagnostics                                                                      | Assembler (D)                                       | Editor, diagnostics panel  | Assembler                          | Replaced on each assembly run                       |
+| Copied snapshots and event batches                                               | Store (F), copies from controller                   | Visualization, inspectors  | Store, on controller notification  | Store never keeps a live instance                   |
+| Editor text                                                                      | Editor component (F), persisted by app (A)          | Assembler trigger          | Editor                             | Persisted only in browser storage (DR-048)          |
+| Visual state (animation progress, highlights, layout)                            | Visualization (E) and features (F)                  | Renderer                   | Renderer                           | Derived; never written back to simulation           |
+| Speed preset, panel layout                                                       | Store (F)                                           | UI                         | UI                                 | UI state only; never affects results (DR-046)       |
 
 ## 8. Data Flow Workflows
 
@@ -179,7 +179,7 @@ sequenceDiagram
   U->>F: clock step / instruction step / run
   F->>C: intent (one call)
   C->>I: stepClock() or stepInstruction()
-  I-->>C: StepOutcome { events, state }
+  I-->>C: StepOutcome { cyclesCompleted, events, halted, fault? }
   C->>C: check breakpoints, update history
   C-->>S: ControllerUpdate { snapshot copy, events }
   S-->>F: new view state
@@ -255,6 +255,8 @@ sequenceDiagram
 | Animation       | Owned by E and F, driven by frames                | Never changes what the simulation computes (DR-032).                    |
 
 Results depend only on the sequence of intents, never on wall-clock time.
+
+The application layer owns the React subscription adapter (`useSyncExternalStore` over the controller's `subscribe`, approved with constraints in CPU strategy §4.4, SC-28). React stays outside the simulation core. Snapshot references remain stable until the underlying store changes. Published state is immutable from the consumer's perspective.
 
 ## 10. Stage 0.1 Product Decisions and Their Architectural Impact
 

@@ -232,14 +232,16 @@ Features are grouped as in the product brief (A–E). Each feature lists its roa
   - AC-021-2: The timeline never offers backward stepping (human check; reverse execution is EX-05).
 - **Depends on:** MVP-006, DR-024.
 
-**MVP-022 — Instruction explanations** · _Not yet mapped to a roadmap stage. See Q-02._
+**MVP-022 — Instruction explanations** · Stage 2.3 (authoring) and Stage 5.4 (display). DR-045 approved for v1.0 with limited scope (SC-D5).
 
 - **Purpose:** Explain in plain language what each executed instruction did (journey step 10, LO-01).
 - **Interaction:** Each timeline entry (MVP-021) has a one-line explanation, such as "A ← A + B; Z and C updated".
-- **Minimum v1.0:** Generated from the instruction definition and its result, one line per instruction. Not a tutorial.
+- **Minimum v1.0:** Authored, deterministic text for each supported instruction (no AI-generated text), one line, naming the registers and flags it changes. Explanation metadata is optional. Missing text shows generic fallback text. Not a tutorial.
 - **Acceptance:**
   - AC-022-1: Every instruction in the ISA has an explanation template (test).
   - AC-022-2: The explanation names the registers and flags changed by the instruction (test).
+  - AC-022-3: Removing every explanation entry leaves execution results unchanged (test).
+  - AC-022-4: An instruction without an explanation entry displays generic fallback text and executes normally (test).
 - **Depends on:** MVP-021, DR-045.
 
 **MVP-023 — Basic debugging** · Stage 5.5
@@ -342,10 +344,10 @@ The original brief's v1.0 list is A-04 in DECISION_REGISTER.md. The additions be
 
 ### 6.1 Scope Additions Requiring Confirmation
 
-| ID   | Question                                                                                                                                                              | Proposal                                                                                       | Register                                        |
-| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| Q-01 | The Stage 0.1 brief adds speed control, control-signal visualization, current instruction and stage display, and explicit resume. Confirm they are v1.0 requirements. | Yes. All four map to existing roadmap stages (4.3, 4.4, 5.3, 5.2).                             | [C] DR-051 (control signals) and DR-046 (speed) |
-| Q-02 | Instruction explanations (MVP-022) are requested but are not mapped to any roadmap stage.                                                                             | Include in v1.0 as one-line generated text. Add to Stage 5.4 when the roadmap is next revised. | [C] DR-045                                      |
+| ID   | Question                                                                                                                                                              | Proposal                                                                                            | Register                                        |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| Q-01 | The Stage 0.1 brief adds speed control, control-signal visualization, current instruction and stage display, and explicit resume. Confirm they are v1.0 requirements. | Yes. All four map to existing roadmap stages (4.3, 4.4, 5.3, 5.2).                                  | [C] DR-051 (control signals) and DR-046 (speed) |
+| Q-02 | Instruction explanations (MVP-022) are requested but were not mapped to any roadmap stage.                                                                            | Resolved: included in v1.0 (DR-045, approved, SC-D5). Authoring in Stage 2.3; display in Stage 5.4. | DR-045 (approved)                               |
 
 ### 6.2 Open Product Questions
 
@@ -370,7 +372,7 @@ Verification performed for Stage 0.1:
 
 | Check                                                             | Result                                                                                                                                                               |
 | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Every in-scope feature maps to at least one roadmap stage         | Pass, except MVP-022, which needs a stage (Q-02)                                                                                                                     |
+| Every in-scope feature maps to at least one roadmap stage         | Pass (MVP-022 mapped to Stages 2.3 and 5.4, DR-045 approved)                                                                                                         |
 | Number of stages (32) covers the in-scope features                | Pass; each stage has at least one feature                                                                                                                            |
 | Blocked features                                                  | MVP-006, MVP-013 and MVP-019 are blocked by the open ISA and micro-operation decisions (DR-001 to DR-018, DR-011, DR-013). This is the main schedule risk.           |
 | Features with highest technical risk                              | MVP-013 (clock-level stepping), MVP-016 (animation tied to events), MVP-021 (timeline bounds)                                                                        |

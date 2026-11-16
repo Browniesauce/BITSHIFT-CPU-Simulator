@@ -1,6 +1,6 @@
 # BITSHIFT — CPU Architecture Strategy
 
-**Status:** Stage 0.2, reconciled after product-owner review. The principle that each architecture owns its semantics is **[A]** (A-10). The registration, step and explanation decisions are **Approved** in [DECISION_REGISTER.md](../decisions/DECISION_REGISTER.md) (DR-053, DR-057, DR-058, DR-061). Section 4.3 is the reconciled list of contract changes for Stage 0.3. It is an input to Stage 0.3 and has not been applied.
+**Status:** Stage 0.3, aligned with the approved contracts (DR-066 as amended, DR-067). The principle that each architecture owns its semantics is **[A]** (A-10). The registration, step and explanation decisions are **Approved** in [DECISION_REGISTER.md](../decisions/DECISION_REGISTER.md) (DR-053, DR-057, DR-058, DR-061). Section 4.4 records the approval status of each contract change, and section 4.5 records the Stage 0.3 resolutions. The contract documents implement the approved list.
 **Related:** [SIMULATION_PLATFORM.md](SIMULATION_PLATFORM.md), [SYSTEM_ARCHITECTURE.md](SYSTEM_ARCHITECTURE.md), [ADR-001](../decisions/ADR-001-modular-simulation-platform.md), [BITSHIFT-8_ISA.md](../specifications/BITSHIFT-8_ISA.md)
 
 ---
@@ -16,7 +16,7 @@ This makes BITSHIFT-16 and RISC-V RV32I (v3.0) possible without changing the pla
 | Concern                                                                         | Shared (platform) | Per architecture                                                                                                                                            |
 | ------------------------------------------------------------------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Lifecycle, run state, step and batch control                                    | Yes               | —                                                                                                                                                           |
-| Cycle counter and history                                                       | Yes               | —                                                                                                                                                           |
+| Authoritative cycle counter (DR-067) and history                                | Yes               | —                                                                                                                                                           |
 | Breakpoints (address set and check)                                             | Yes               | Supplies the program counter value                                                                                                                          |
 | Event envelope (cycle, sequence, kind, payload)                                 | Yes               | Event kinds and payload types                                                                                                                               |
 | Snapshot envelope (ID, cycle, state, PC, register list, flag list, memory copy) | Yes               | Register names, widths, flag names, extra typed details                                                                                                     |
@@ -35,16 +35,17 @@ This makes BITSHIFT-16 and RISC-V RV32I (v3.0) possible without changing the pla
 
 The brief requires these to be treated as distinct. Each level has a different owner and a different contract method.
 
-| Level               | What it is                                                               | Owner of the rule                                                  | Contract operation      | Returned to platform                                                   |
-| ------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------ | ----------------------- | ---------------------------------------------------------------------- |
-| **Micro-operation** | One atomic transfer or ALU action                                        | Architecture                                                       | Internal to `stepClock` | Events describing it                                                   |
-| **Clock cycle**     | The unit of simulated time. For BITSHIFT-8, one micro-operation (DR-053) | Architecture decides what a cycle contains; platform counts cycles | `stepClock()`           | `StepOutcome` for that cycle                                           |
-| **Instruction**     | All cycles until the next instruction boundary                           | Architecture decides boundaries; platform decides how many to run  | `stepInstruction()`     | `StepOutcome` covering several cycles, with `instructionCompleted` set |
+| Level               | What it is                                                               | Owner of the rule                                                                                            | Contract operation      | Returned to platform                                                   |
+| ------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ | ----------------------- | ---------------------------------------------------------------------- |
+| **Micro-operation** | One atomic transfer or ALU action                                        | Architecture                                                                                                 | Internal to `stepClock` | Events describing it                                                   |
+| **Clock cycle**     | The unit of simulated time. For BITSHIFT-8, one micro-operation (DR-053) | Architecture decides what a cycle contains and reports `cyclesCompleted`; platform owns the counter (DR-067) | `stepClock()`           | `StepOutcome` for that cycle                                           |
+| **Instruction**     | All cycles until the next instruction boundary                           | Architecture decides boundaries; platform decides how many to run                                            | `stepInstruction()`     | `StepOutcome` covering several cycles, with `instructionCompleted` set |
 
 Rules:
 
 - The platform never looks inside an instruction. It only asks for cycles or instruction boundaries.
 - The platform does not check how many micro-operations a cycle contains. That is an architecture rule (DR-053 qualification).
+- The architecture reports `cyclesCompleted`, the work done in a step. It never reports a cycle number. The platform owns the only counter (DR-067).
 - An architecture implements `stepInstruction` in terms of its own cycles. It must not skip micro-operation events when it does so.
 - A clock step at an instruction boundary starts the next instruction. This is consistent with "instruction step ends at a boundary".
 
@@ -54,17 +55,17 @@ This section describes the operations and their meaning. The exact TypeScript in
 
 ### 4.1 Operations
 
-| Operation            | Purpose                                                                                       | Failure behaviour                                                                                                        |
-| -------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `createInstance()`   | Fresh CPU in post-reset state. Lives on the architecture, not in the data descriptor (SC-15). | Cannot fail                                                                                                              |
-| `loadProgram(image)` | Writes the program bytes at the origin and sets the entry PC                                  | `Result` error if the image does not fit, the origin is invalid, or the architecture ID does not match. State unchanged. |
-| `reset()`            | Restores post-load state (registers, flags, PC, memory as loaded)                             | Cannot fail                                                                                                              |
-| `stepClock()`        | Executes one clock cycle                                                                      | Illegal state → fault outcome                                                                                            |
-| `stepInstruction()`  | Executes cycles to the next instruction boundary, or to halt or fault                         | As above                                                                                                                 |
-| `snapshot()`         | Returns an immutable copy of the current state (SIMULATION_PLATFORM §7.5)                     | Cannot fail                                                                                                              |
-| `readMemory(range)`  | Returns a copy of part of memory for inspectors                                               | `Result` error for out-of-range requests                                                                                 |
+| Operation            | Purpose                                                                                                  | Failure behaviour                                                                                                        |
+| -------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `createInstance()`   | Fresh CPU in post-reset state. Lives on the architecture, not in the data descriptor (SC-15).            | Cannot fail                                                                                                              |
+| `loadProgram(image)` | Writes the program bytes at the origin and sets the entry PC                                             | `Result` error if the image does not fit, the origin is invalid, or the architecture ID does not match. State unchanged. |
+| `reset()`            | Restores post-load state (registers, flags, PC, memory as loaded)                                        | Cannot fail                                                                                                              |
+| `stepClock()`        | Executes one clock cycle                                                                                 | Illegal state → fault outcome                                                                                            |
+| `stepInstruction()`  | Executes cycles to the next instruction boundary, or to halt or fault                                    | As above                                                                                                                 |
+| `readState()`        | Returns an architecture state copy that shares no mutable object with the instance (DATA_CONTRACTS §4.1) | Cannot fail                                                                                                              |
+| `readMemory(range)`  | Returns a copy of part of memory for inspectors                                                          | `Result` error for out-of-range requests                                                                                 |
 
-Events come back inside each step's `StepOutcome`. The architecture does not keep them.
+Events come back inside each step's `StepOutcome`. The architecture does not keep them. `StepOutcome` carries no breakpoint information: breakpoints belong to the platform (SC-10, amended).
 
 The explanation function is **not** an instance operation. It is an optional, pure function on the architecture (`explainInstruction(record)`, DR-061, SC-11). It is never called on the execution path.
 
@@ -77,20 +78,20 @@ sequenceDiagram
   P->>I: loadProgram(image)
   I-->>P: Result ok
   P->>I: stepClock()
-  I-->>P: StepOutcome { events: [micro-operation, bus-transfer, ...], state: running }
+  I-->>P: StepOutcome { cyclesCompleted: 1, events: [micro-operation, bus-transfer, ...] }
   P->>I: stepInstruction()
   loop until boundary, halt or fault
     I->>I: execute one cycle internally
   end
-  I-->>P: StepOutcome { events, state, instructionCompleted: true }
-  P->>I: snapshot()
-  I-->>P: CpuSnapshot (copy)
-  Note over P,I: If the architecture reaches HLT, it returns state halted.<br/>If it finds an illegal state, it returns state faulted with a Diagnostic.
+  I-->>P: StepOutcome { cyclesCompleted: n, instructionCompleted: true, halted: false, events }
+  P->>I: readState()
+  I-->>P: CpuStateCopy (copy)
+  Note over P,I: If the architecture reaches HLT, it reports `halted: true`.<br/>If it finds an illegal state, it returns a `fault` with a Diagnostic and `cyclesCompleted` 0.
 ```
 
 ### 4.3 Reconciled Contract Changes for Stage 0.3
 
-These are the changes that the contract documents need so that they agree with the approved architecture decisions. They are **not applied** in this stage. They become Stage 0.3 work once the product owner approves this list (DR-066).
+These are the changes that the contract documents need so that they agree with the approved architecture decisions. They are **not applied** in this stage. They were approved on 2026-11-16 as amended. Section 4.4 records the status of each item and supersedes the default wording in 4.3 where they differ.
 
 Each change names the contract document, the current text, the required text, and the source of the requirement. Changes marked **Decision** need a product-owner answer, and Stage 0.3 can proceed on the stated default if no answer comes.
 
@@ -98,7 +99,7 @@ Each change names the contract document, the current text, the required text, an
 
 | ID    | Document and location | Current contract                                                                                   | Required change                                                                                                                                                                                                        | Source                           |
 | ----- | --------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| SC-01 | MODULE_CONTRACTS §3   | `run()` and `pause()`; "the controller's own loop" runs batches                                    | Replace with `beginRun()`, `runBatch(n)` and `endRun()`. The controller has no loop and no timer. The UI calls `runBatch`.                                                                                             | DR-058; SIMULATION_PLATFORM §3–4 |
+| SC-01 | MODULE_CONTRACTS §3   | `run()` and `pause()`; "the controller's own loop" runs batches                                    | Replace with `beginRun()`, `runBatch(n)` and `endRun()`. The controller has no loop and no timer. The UI calls `runBatch`. `runBatch(n)` executes up to n clock cycles (SC-01, amended in §4.4).                       | DR-058; SIMULATION_PLATFORM §3–4 |
 | SC-02 | MODULE_CONTRACTS §3   | "Methods are fire-and-forget. Results appear through `subscribe`."                                 | Methods are synchronous and return `Result` where they can fail. Results are also delivered through `subscribe`. The two statements conflict; the synchronous form is the approved one.                                | SIMULATION_PLATFORM §4           |
 | SC-03 | MODULE_CONTRACTS §3   | `stepMicroOperation()`                                                                             | Rename to `stepClock()`.                                                                                                                                                                                               | DR-053; MVP-013                  |
 | SC-04 | MODULE_CONTRACTS §3   | `ControllerUpdate.reason` includes `'run-batch'` and no run-state reasons                          | Add `'run-start'`, `'run-end'`, `'clock-step'` and `'instruction-step'`. Keep the others.                                                                                                                              | SIMULATION_PLATFORM §3           |
@@ -112,11 +113,11 @@ Each change names the contract document, the current text, the required text, an
 | ID    | Document and location                     | Current contract                                                                      | Required change                                                                                                                                                                                    | Source                                         |
 | ----- | ----------------------------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
 | SC-09 | MODULE_CONTRACTS §2                       | `stepMicroOperation()` on `CpuInstance`                                               | Rename to `stepClock()` (see SC-03).                                                                                                                                                               | DR-053                                         |
-| SC-10 | MODULE_CONTRACTS §2                       | `StepOutcome { events, state, instructionCompleted }`                                 | Add `cycle: number` (the cycle counter after the step) and `breakpointAtPc: boolean` (for the UI, per SIMULATION_PLATFORM §6).                                                                     | SIMULATION_PLATFORM §6                         |
+| SC-10 | MODULE_CONTRACTS §2                       | `StepOutcome { events, state, instructionCompleted }`                                 | Add `cyclesCompleted: number` (a delta; the platform owns the cycle counter, DR-067). `breakpointAtPc` is removed: breakpoints are platform-owned (amended, §4.4).                                 | SIMULATION_PLATFORM §6                         |
 | SC-11 | CPU strategy §4.1 and MODULE_CONTRACTS §2 | `explainInstruction` listed among instance operations                                 | Place `explainInstruction` on the architecture, not the instance. It is pure and takes an instruction record. It is optional.                                                                      | DR-061                                         |
 | SC-12 | MODULE_CONTRACTS §2                       | `snapshot()` "must return a copy"                                                     | Make the rule normative: no snapshot shares an array, object or byte buffer with the instance. Memory bytes are copied with a new array.                                                           | SIMULATION_PLATFORM §7.5; DR-056 requirement 4 |
 | SC-13 | DATA_CONTRACTS §2 and MODULE_CONTRACTS §1 | `createInstance()` appears on **both** `ArchitectureDescriptor` and `CpuArchitecture` | **Decision:** DR-015 (descriptor data-only or includes functions). **Default if unanswered:** the descriptor is data-only (DR-015 proposal), and `createInstance` lives only on `CpuArchitecture`. | DR-015; CPU strategy §6                        |
-| SC-14 | DATA_CONTRACTS §2                         | `ArchitectureDescriptor` has no `programCounter` field                                | Add `programCounter: string \| 'none'` (the register name, or `none` for PC-less architectures).                                                                                                   | DR-022 (proposed); CPU strategy §6             |
+| SC-14 | DATA_CONTRACTS §2                         | `ArchitectureDescriptor` has no `programCounter` field                                | Add `programCounter: string \| 'none'` (the register name, or `none` for PC-less architectures). Deferred pending DR-022 (SC-14, see §4.4).                                                        | DR-022 (proposed); CPU strategy §6             |
 | SC-15 | MODULE_CONTRACTS §1                       | `CpuArchitecture { descriptor, createInstance, visualization }`                       | Add `explainInstruction?` (optional, DR-061). Keep `visualization` as a value supplied to the view layer (DR-062).                                                                                 | DR-061; DR-062                                 |
 | SC-16 | Not in any contract                       | No type for the registry                                                              | Add `ArchitectureRegistry`: a readonly list of `CpuArchitecture` plus `lookup(id): Result`. It is defined in the platform, and the list is supplied by the composition root.                       | DR-057                                         |
 
@@ -169,6 +170,67 @@ Each change names the contract document, the current text, the required text, an
 - **Must wait for product owner approval:** SC-D1 (the list itself) and the decisions in SC-D2 to SC-D5 if the defaults are not accepted.
 - **Must not be done in Stage 0.3:** any concrete micro-operation vocabulary or control-signal names, any cycle count, or any explanation template. Those belong to Phase 2 and depend on DR-011 and DR-013 (finding R-01, R-02).
 
+#### 4.4 Approval status and amendments (2026-11-16)
+
+The product owner approved DR-066 and SC-D1, subject to the amendments below. Unless stated, each item in 4.3 is approved as written. This section supersedes the default wording in 4.3 where they differ.
+
+| ID             | Status                      | Approved text, amendment or deferral                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| -------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SC-01          | Approved, amended           | `runBatch(n)` executes up to `n` **clock cycles**. It stops early when execution halts, faults or reaches a breakpoint.                                                                                                                                                                                                                                                                                                                                                   |
+| SC-02          | Approved                    | Synchronous methods returning `Result` where they can fail.                                                                                                                                                                                                                                                                                                                                                                                                               |
+| SC-03          | Approved                    | `stepMicroOperation` renamed to `stepClock`.                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| SC-04          | Approved                    | Run-state update reasons added.                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| SC-05          | Approved (SC-D3)            | `selectArchitecture` removed from v1.0. Architecture selection happens during application initialization, from the list supplied by the composition root.                                                                                                                                                                                                                                                                                                                 |
+| SC-06          | Approved                    | `setBreakpoints` returns `Result`.                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| SC-07          | Approved                    | Controller created by a factory that receives `architectures` and `historyLimit`.                                                                                                                                                                                                                                                                                                                                                                                         |
+| SC-08          | Approved                    | Snapshot accessor returns a copy.                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| SC-09          | Approved                    | Renamed to `stepClock` on `CpuInstance`.                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| SC-10          | Approved, amended           | `StepOutcome` reports `cyclesCompleted` (the work done in the step), not a cycle counter. DR-067 resolved: the platform owns the authoritative counter. **`breakpointAtPc` is not added.** Breakpoints belong to the simulation platform. CPU execution returns CPU-owned results only. The platform compares the program counter (from the snapshot's `programCounter`) with its breakpoint set, and exposes a breakpoint hit through the controller's update or result. |
+| SC-11          | Approved                    | `explainInstruction` is on the architecture, is pure, and is optional (DR-061).                                                                                                                                                                                                                                                                                                                                                                                           |
+| SC-12          | Approved                    | Snapshots never share mutable state with the instance. Memory bytes are copied.                                                                                                                                                                                                                                                                                                                                                                                           |
+| SC-13          | Approved (SC-D2)            | `createInstance()` belongs exclusively to `CpuArchitecture`. The descriptor is data-only. The duplicate definition is resolved.                                                                                                                                                                                                                                                                                                                                           |
+| SC-14          | **Deferred** pending DR-022 | `programCounter` is **not** added to the descriptor until DR-022 is explicitly resolved. Breakpoint checks use the snapshot's `programCounter` field, so they do not depend on this deferral.                                                                                                                                                                                                                                                                             |
+| SC-15          | Approved                    | Optional `explainInstruction`; `visualization` supplied as a value.                                                                                                                                                                                                                                                                                                                                                                                                       |
+| SC-16          | Approved                    | `ArchitectureRegistry` in the platform; list supplied by the composition root.                                                                                                                                                                                                                                                                                                                                                                                            |
+| SC-17          | Approved                    | Field `tick` renamed to `cycle`; type `Tick` renamed to `ClockCycle`. Applied consistently across contracts and architecture documents. The counter starts at zero after reset.                                                                                                                                                                                                                                                                                           |
+| SC-18          | Approved, amended           | `controlSignals: readonly string[]` is approved in the shared micro-operation payload. Making `label`, `sources` and `destinations` generic shared fields is **deferred to Phase 2**. No universal micro-operation representation is introduced.                                                                                                                                                                                                                          |
+| SC-19          | Approved                    | `before` and `after` on `flag-update` and `output-emitted`.                                                                                                                                                                                                                                                                                                                                                                                                               |
+| SC-20          | Approved, clarified         | Applying all **state-changing** events from a cycle, in order, to the previous snapshot must produce the next snapshot. Informational events do not necessarily mutate snapshot state.                                                                                                                                                                                                                                                                                    |
+| SC-21          | Approved                    | Clock-level events kept for the latest instruction.                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| SC-22          | Approved                    | `TimelineEntry` uses `startCycle`, `endCycle`, `changes` and optional `explanation`.                                                                                                                                                                                                                                                                                                                                                                                      |
+| SC-23          | Approved (DR-014)           | Architecture-specific kinds are namespaced. Unknown kinds are forwarded without interpreting their payloads. Shared visualization may ignore them.                                                                                                                                                                                                                                                                                                                        |
+| SC-24          | Approved                    | Examples updated for `controlSignals` and cycle naming.                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| SC-25          | Approved                    | `recentlyWritten` and `recentlyRead` removed.                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| SC-26          | Approved                    | Timeline explanations come from the architecture, not from `describeEvent`.                                                                                                                                                                                                                                                                                                                                                                                               |
+| SC-27          | Approved                    | `activeControlSignals` added to the view model.                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| SC-28          | Approved, with constraints  | `useSyncExternalStore` approach. (a) React stays outside the simulation core. (b) The application layer owns the React subscription adapter. (c) Snapshot references remain stable until the underlying store changes. (d) No new snapshot object is created on each `getSnapshot()` call. (e) Published state is immutable from the consumer's perspective.                                                                                                              |
+| SC-29          | Approved                    | `EditorPersistence` in the application layer; the CPU engine has no persistence responsibility.                                                                                                                                                                                                                                                                                                                                                                           |
+| SC-30          | Approved, amended           | **One source of truth for architecture identity:** the ISA supplied to the assembler identifies its architecture. `ProgramImage.architectureId` is taken from that ISA. `assemble()` takes no separate `architectureId` argument. Stage 0.3 must give the ISA contract an architecture identifier.                                                                                                                                                                        |
+| SC-31 to SC-33 | Approved                    | Terminology, operation names and ownership statements apply across all contract documents.                                                                                                                                                                                                                                                                                                                                                                                |
+| SC-D1          | Approved                    | Approves DR-066 with the amendments in this table.                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| SC-D2          | Approved                    | DR-015: data-only descriptor (see SC-13).                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| SC-D3          | Approved                    | Runtime architecture switching is not supported in v1.0 (see SC-05).                                                                                                                                                                                                                                                                                                                                                                                                      |
+| SC-D4          | Approved                    | DR-014: namespaced architecture-specific event kinds (see SC-23).                                                                                                                                                                                                                                                                                                                                                                                                         |
+| SC-D5          | Approved, limited scope     | DR-045: concise explanations for supported instructions in v1.0. Explanation metadata is optional, missing explanations must not affect execution, and generic fallback text is shown. Authoring belongs to Stage 2.3 and display to Stage 5.4. No AI-generated explanations and no tutoring system.                                                                                                                                                                      |
+
+**Still open after this approval** (not approved as part of DR-066):
+
+- DR-067: resolved in Stage 0.3. The platform owns the authoritative cycle counter (section 4.5).
+- DR-011: concrete cycle counts and micro-operation sequences.
+- DR-013 (internal part): internal representation of micro-operations, Phase 2 entry.
+- DR-022: program counter descriptor field (gates SC-14).
+- DR-031: performance targets, pending measurement.
+- Any other unresolved ISA or architecture-specific decisions.
+
+#### 4.5 Stage 0.3 Resolutions
+
+- **DR-067 (approved: platform-owned cycle counting).** The platform's counter starts at 0 after reset and after a successful load. It advances by exactly `cyclesCompleted` per architecture step. A failed step advances nothing. `StepOutcome` carries no cycle counter. Events and snapshots carry the platform's cycle numbers. Full rules: SIMULATION_PLATFORM §2.2.
+- **SC-10 (amended).** `StepOutcome` is `{ cyclesCompleted, instructionCompleted, halted, fault?, events }`. It has no cycle number and no breakpoint information.
+- **Error classes.** Result errors are caller mistakes. Faults are simulated CPU conditions, reported in `StepOutcome.fault`. Exceptions are programmer errors, converted to `PLT-INTERNAL`. Full rules: SIMULATION_PLATFORM §9.
+- **Architecture identity (SC-30, derived).** The ISA's `architectureId` is the single source of identity. The descriptor has no separate `id`, and `ProgramImage.architectureId` is derived from the ISA. This is the Stage 0.3 reading of SC-30 and of the rule against redundant identity fields. It is recorded for product-owner confirmation.
+- **Descriptor is data-only (SC-13, DR-015).** `createInstance()` exists only on `CpuArchitecture`.
+- **Other Stage 0.3 definitions, recorded for acceptance (not separately approved):** (a) a faulting step has no events and no cycles (DATA_CONTRACTS §5); (b) the platform emits the `fault` event itself (EVENT_MODEL §3.3); (c) after an exception the instance is replaced on the next reset (MODULE_CONTRACTS §2.4.5); (d) published snapshots are frozen, and memory is copied on every read (DATA_CONTRACTS §4.4).
+
 ## 5. Registration and the Composition Root
 
 ### 5.1 Decision (DR-057, approved)
@@ -178,11 +240,12 @@ Architectures are registered in the **composition root**: a single module in `sr
 ```ts
 // src/app/bootstrap.ts — illustrative only, not implemented
 import { bitshift8 } from '../architectures/bitshift-8'; // public entry only
-import { createController } from '../platform';
+import { createArchitectureRegistry, createController } from '../platform';
 
 export const controller = createController({
-  architectures: [bitshift8], // future: bitshift16, riscv32i
-  historyLimit: 10_000, // default pending DR-024; configurable per DR-056
+  registry: createArchitectureRegistry([bitshift8]), // future: add bitshift16, riscv32i
+  architectureId: 'bitshift-8', // selected at initialization, fixed for the session (SC-D3)
+  historyLimit: 10_000, // required option; the default is DR-024 and is not set here
 });
 ```
 
@@ -211,19 +274,19 @@ The earlier draft placed a list of descriptors in `src/platform/registry.ts`. Th
 
 ## 6. Architecture Descriptor
 
-The descriptor is the only thing the rest of the application reads at startup. It contains data, not behaviour, if DR-015 is approved as proposed (SC-D2). The full type is in [DATA_CONTRACTS.md](../contracts/DATA_CONTRACTS.md).
+The descriptor is the only thing the rest of the application reads at startup. It contains data only (DR-015 approved, SC-D2). The full type is in [DATA_CONTRACTS.md](../contracts/DATA_CONTRACTS.md).
 
-| Field                                    | Purpose                                                        |
-| ---------------------------------------- | -------------------------------------------------------------- |
-| `id`                                     | Stable identifier, lowercase kebab-case, e.g. `bitshift-8`     |
-| `displayName`                            | Human name, e.g. `BITSHIFT-8`                                  |
-| `wordBits`, `addressBits`, `memoryBytes` | Sizes (BITSHIFT-8: 8, 8, 256)                                  |
-| `registers`                              | Generic list: name, width, role, programmer-visible            |
-| `flags`                                  | Generic list: name and meaning                                 |
-| `programCounter`                         | Name of the register that is the PC, or `none` (DR-022; SC-14) |
-| `isa`                                    | Instruction descriptor for the assembler and decoder (DR-015)  |
+| Field                                    | Purpose                                                                                                                       |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `isa.architectureId`                     | Not a separate field. Identity is `isa.architectureId` (SC-30, derived in Stage 0.3). Lowercase kebab-case, e.g. `bitshift-8` |
+| `displayName`                            | Human name, e.g. `BITSHIFT-8`                                                                                                 |
+| `wordBits`, `addressBits`, `memoryBytes` | Sizes (BITSHIFT-8: 8, 8, 256)                                                                                                 |
+| `registers`                              | Generic list: name, width, role, programmer-visible                                                                           |
+| `flags`                                  | Generic list: name and meaning                                                                                                |
+| `programCounter`                         | Name of the register that is the PC, or `none` (DR-022 proposed; SC-14 deferred)                                              |
+| `isa`                                    | Instruction descriptor for the assembler and decoder (DR-015)                                                                 |
 
-The factory `createInstance()` lives on `CpuArchitecture`, not in the data descriptor (SC-13, pending SC-D2). The explanation function and the visualization adapter are also supplied alongside the descriptor, through the architecture's public entry, so the platform never sees them as data.
+The factory `createInstance()` lives on `CpuArchitecture`, not in the data descriptor (SC-13; DR-015 approved). The explanation function and the visualization adapter are also supplied alongside the descriptor, through the architecture's public entry, so the platform never sees them as data.
 
 ## 7. Coupling With Other Subsystems
 
@@ -254,7 +317,7 @@ The approved decision (DR-053) is written for BITSHIFT-8 only. It is explicitly 
 
 What this means in practice:
 
-- The platform counts cycles and never inspects the contents of a cycle. It does not assume one micro-operation per cycle, and no platform check enforces it.
+- The platform reads the cycle counter and never inspects the contents of a cycle. It does not assume one micro-operation per cycle, and no platform check enforces it.
 - Conformance tests for BITSHIFT-8 check the one-micro-operation rule. The platform's own tests use the fixture and do not.
 - A future architecture with pipelined or multi-issue semantics would declare its step model in the descriptor (for example `stepModel: 'one-micro-operation' | 'overlapped'`). This is a later extension, and it is not built now.
 - Changing a shared envelope (for example adding a required field for every architecture) needs an ADR. Adding an optional field does not.
@@ -269,23 +332,23 @@ What this means in practice:
 
 ## 9. Open Questions Affecting This Strategy
 
-| Question                                                  | Register | Status                             | Effect if unresolved                                                                        |
-| --------------------------------------------------------- | -------- | ---------------------------------- | ------------------------------------------------------------------------------------------- |
-| ISA descriptor data-only or includes functions            | DR-015   | Open (default in SC-D2)            | Descriptor type shape in Phase 1                                                            |
-| Micro-operation internal representation                   | DR-013   | Open; narrowed by finding R-02     | Phase 2 entry only. Shared payload is a Stage 0.3 item.                                     |
-| Architecture-defined event kinds                          | DR-014   | Open (default in SC-D4)            | Whether custom kinds are allowed; shared visualization ignores unknown kinds either way     |
-| Clock cycles per instruction and micro-operation sequence | DR-011   | Open; finding R-01                 | Blocks clock-level stepping (MVP-013), control-signal sequences (MVP-019) and cycle numbers |
-| Stepping boundaries                                       | DR-018   | Open                               | Whether an instruction step can end mid-instruction                                         |
-| PC required in every architecture                         | DR-022   | Proposed                           | Breakpoints for PC-less architectures                                                       |
-| Explanation text for each instruction                     | DR-045   | Open; finding R-04                 | Whether MVP-022 is in v1.0 (contract fields are optional either way)                        |
-| Contract changes listed in §4.3                           | DR-066   | Open; awaits approval of this list | Contract documents disagree with this strategy until applied                                |
+| Question                                                  | Register | Status                                        | Effect if unresolved                                                                        |
+| --------------------------------------------------------- | -------- | --------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| ISA descriptor data-only or includes functions            | DR-015   | Approved (SC-D2)                              | Descriptor type shape in Phase 1                                                            |
+| Micro-operation internal representation                   | DR-013   | Partially approved (controlSignals); see R-02 | Phase 2 entry only. Shared payload is a Stage 0.3 item.                                     |
+| Architecture-defined event kinds                          | DR-014   | Approved (SC-D4)                              | Whether custom kinds are allowed; shared visualization ignores unknown kinds either way     |
+| Clock cycles per instruction and micro-operation sequence | DR-011   | Open; finding R-01                            | Blocks clock-level stepping (MVP-013), control-signal sequences (MVP-019) and cycle numbers |
+| Stepping boundaries                                       | DR-018   | Open                                          | Whether an instruction step can end mid-instruction                                         |
+| PC required in every architecture                         | DR-022   | Proposed                                      | Breakpoints for PC-less architectures                                                       |
+| Explanation text for each instruction                     | DR-045   | Approved (qualified), SC-D5                   | Whether MVP-022 is in v1.0 (contract fields are optional either way)                        |
+| Contract changes listed in §4.3                           | DR-066   | Approved with amendments (DR-066)             | Contract documents disagree with this strategy until applied                                |
 
 ## 10. Testing per Architecture
 
 - Each architecture has a conformance suite in `tests/architectures/<id>/`. Its expected values come from the ISA specification, not from the implementation.
 - The platform is tested with a **test-only fixture architecture** in `tests/platform/fixtures/`. It uses different register widths, a different flag set and a short fixed script of micro-operations. It proves that nothing in the platform depends on BITSHIFT-8. It is never shipped.
 - The fixture is also used to test the composition-root wiring with two architectures in the list. This tests lookup and selection without any second real CPU.
-- The snapshot isolation rule (SIMULATION_PLATFORM §7.5) is tested on the fixture, so it holds for every architecture.
+- The snapshot isolation rule (SIMULATION_PLATFORM §7.4) is tested on the fixture, so it holds for every architecture.
 
 ## 11. Anti-Patterns (rejected)
 
