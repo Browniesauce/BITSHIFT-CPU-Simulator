@@ -11,7 +11,7 @@ Product definition: `docs/product/PRODUCT_SPEC.md`, `MVP_SCOPE.md`, `RELEASE_ROA
 ## 2. Where the Project Is
 
 - **Release:** v1.0, BITSHIFT-8 simulator. Only v1.0 is authorised for planning and implementation. v2.0 to v4.0 are directions only.
-- **Phase:** Phase 0 (product and architecture foundation). Stages 0.1 to 0.3 are complete and awaiting product-owner acceptance. **Stage 0.4 has not started.**
+- **Phase:** Phase 0 (product and architecture foundation). Stages 0.1 to 0.3 are accepted by the product owner. **Stage 0.4 has not started.**
 - **Application code:** none. `src/` contains only the placeholder shell. Do not write simulator code until the phase that owns it has started and its prerequisites are approved.
 
 ## 3. Hierarchy and Workflow
@@ -34,7 +34,9 @@ Authoritative list: `docs/decisions/DECISION_REGISTER.md`. The main ones:
 - **Architecture identity has one source:** the ISA's `architectureId`. The descriptor has no separate `id` (SC-30, Stage 0.3 reading).
 - **Descriptors are data-only.** `createInstance()` belongs to `CpuArchitecture` (DR-015).
 - **Architecture selection happens at initialization.** No runtime switching in v1.0 (SC-D3).
-- **Architectures are registered in the composition root** `src/app/` (DR-057). The platform imports no concrete architecture.
+- **Architectures are registered in the composition root** `src/app/` (DR-057). The platform imports no concrete architecture. The composition root validates that the selected architecture matches the ISA (DR-069).
+- **Failed steps:** Result errors never invoke the architecture. Faulting steps complete zero cycles and emit no events. Exceptions become `PLT-INTERNAL`, complete zero cycles, and leave the controller faulted. The next reset creates a fresh instance (DR-070, DR-071).
+- **Shared event payloads** keep their Phase 0 fields. Changes need explicit approval (DR-072).
 - **The platform has no timers.** The UI calls `runBatch` (DR-058).
 - **Breakpoints are platform-owned.** The CPU never sees them and never reports them (SC-10).
 - **State:** React's native mechanisms through `useSyncExternalStore`. No state library (DR-054). Animation is CSS and SVG first (DR-055); Motion is deferred (DR-064).
