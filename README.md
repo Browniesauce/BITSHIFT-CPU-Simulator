@@ -68,4 +68,4 @@ docs/             documentation
 
 ## Technology
 
-React, TypeScript, Vite, Vitest, pnpm. Further libraries (Zustand, Tailwind CSS, Motion, CodeMirror 6) are planned per the [technology stack](docs/architecture/TECHNOLOGY_STACK.md) and are not yet approved.
+React, TypeScript, Vite, Vitest, pnpm. Further libraries (Tailwind CSS, Motion if needed, CodeMirror 6; Zustand proposed to drop, DR-054) are planned per the [technology stack](docs/architecture/TECHNOLOGY_STACK.md) and are not yet approved.

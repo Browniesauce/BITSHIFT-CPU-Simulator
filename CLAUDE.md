@@ -18,20 +18,20 @@ No backend. Everything runs in the browser.
 
 The stack is **proposed**, not yet approved (decision DR-039). Use only what is installed, unless the stack document says a package is planned for a later phase.
 
-| Area            | Tool                    | Installed now    |
-| --------------- | ----------------------- | ---------------- |
-| Frontend        | React                   | Yes              |
-| Language        | TypeScript (5.9.x)      | Yes              |
-| Build           | Vite                    | Yes              |
-| Styling         | Tailwind CSS            | Phase 4          |
-| State           | Zustand                 | Phase 5 (DR-035) |
-| Animation       | Motion for React        | Phase 4          |
-| Datapath        | Native SVG              | n/a              |
-| Editor          | CodeMirror 6            | Phase 3          |
-| Tests           | Vitest                  | Yes              |
-| Format          | Prettier                | Yes              |
-| Package manager | pnpm 9                  | Yes              |
-| Dev environment | Dev Container (Node 22) | Yes              |
+| Area            | Tool                               | Installed now            |
+| --------------- | ---------------------------------- | ------------------------ |
+| Frontend        | React                              | Yes                      |
+| Language        | TypeScript (5.9.x)                 | Yes                      |
+| Build           | Vite                               | Yes                      |
+| Styling         | Tailwind CSS                       | Phase 4                  |
+| State           | Zustand (proposed to drop, DR-054) | Phase 5 if kept (DR-035) |
+| Animation       | Motion for React                   | Phase 4                  |
+| Datapath        | Native SVG                         | n/a                      |
+| Editor          | CodeMirror 6                       | Phase 3                  |
+| Tests           | Vitest                             | Yes                      |
+| Format          | Prettier                           | Yes                      |
+| Package manager | pnpm 9                             | Yes                      |
+| Dev environment | Dev Container (Node 22)            | Yes                      |
 
 Full rationale and dependency plan: `docs/architecture/TECHNOLOGY_STACK.md`.
 

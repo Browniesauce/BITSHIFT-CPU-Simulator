@@ -50,21 +50,39 @@ A proposal becomes **Approved** only when the product owner says so. Record the 
 
 ## B. Proposed Engineering Decisions (pending approval)
 
-| ID     | Proposal                                                                                                                  | Where it is applied                       | Status   |
-| ------ | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | -------- |
-| DR-022 | Platform requires a program counter in every architecture. An architecture without a PC has breakpoints disabled.         | DATA_CONTRACTS §3                         | Proposed |
-| DR-025 | Snapshots are full copies per request, not diffs.                                                                         | DATA_CONTRACTS §3; SIMULATION_PLATFORM §8 | Proposed |
-| DR-026 | Run mode advances in batches of N instruction steps. N is a controller parameter, measured in Phase 1.                    | SIMULATION_PLATFORM §3                    | Proposed |
-| DR-028 | In the UI, "Step" means one micro-operation. "Step instruction" is a separate control.                                    | SIMULATION_PLATFORM §2.2                  | Proposed |
-| DR-029 | v1.0 does not allow editing memory directly in the UI. Memory changes come only from loading a program.                   | MODULE_CONTRACTS §2                       | Proposed |
-| DR-032 | Animation is optional, speed-adjustable, and never affects simulation results.                                            | DEVELOPMENT_ROADMAP 4.4                   | Proposed |
-| DR-033 | v1.0 runs the simulation on the main thread. A Web Worker is used only if DR-031 targets are missed.                      | SYSTEM_ARCHITECTURE §7                    | Proposed |
-| DR-034 | The store publishes to the UI at most once per run batch, not per micro-operation.                                        | SIMULATION_PLATFORM §8                    | Proposed |
-| DR-036 | TypeScript is pinned to 5.9.x. Revisit at the Phase 1 review, including the 7.x line.                                     | TECHNOLOGY_STACK §5                       | Proposed |
-| DR-040 | v1.0 targets desktop browsers only. Minimum supported layout width is 1280 px. Mobile and touch layouts are out of scope. | MVP_SCOPE EX-15; CODING_STANDARDS §8      | Proposed |
-| DR-041 | The Dev Container uses the Node 22 base image with corepack and pnpm 9. A custom Dockerfile is not needed in v1.0.        | TECHNOLOGY_STACK §1                       | Proposed |
-| DR-043 | Architecture-specific event kinds are namespaced as `<architecture-id>/<kind>`.                                           | EVENT_MODEL §4                            | Proposed |
-| DR-044 | Browser support is the current stable Chrome, Edge, Firefox and Safari, with no older version floor.                      | PRODUCT_SPEC S-6                          | Proposed |
+| ID     | Proposal                                                                                                                                                                 | Where it is applied                       | Status   |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- | -------- |
+| DR-022 | Platform requires a program counter in every architecture. An architecture without a PC has breakpoints disabled.                                                        | DATA_CONTRACTS §3                         | Proposed |
+| DR-025 | Snapshots are full copies per request, not diffs.                                                                                                                        | DATA_CONTRACTS §3; SIMULATION_PLATFORM §8 | Proposed |
+| DR-026 | Run mode advances in batches of N instruction steps. N is a controller parameter, measured in Phase 1.                                                                   | SIMULATION_PLATFORM §3                    | Proposed |
+| DR-028 | In the UI, "Step" means one micro-operation. "Step instruction" is a separate control.                                                                                   | SIMULATION_PLATFORM §2.2                  | Proposed |
+| DR-029 | v1.0 does not allow editing memory directly in the UI. Memory changes come only from loading a program.                                                                  | MODULE_CONTRACTS §2                       | Proposed |
+| DR-032 | Animation is optional, speed-adjustable, and never affects simulation results.                                                                                           | DEVELOPMENT_ROADMAP 4.4                   | Proposed |
+| DR-033 | v1.0 runs the simulation on the main thread. A Web Worker is used only if DR-031 targets are missed.                                                                     | SYSTEM_ARCHITECTURE §7                    | Proposed |
+| DR-034 | The store publishes to the UI at most once per run batch, not per micro-operation. Refined in Stage 0.2 to at most once per animation frame (SIMULATION_PLATFORM §10.4). | SIMULATION_PLATFORM §8                    | Proposed |
+| DR-036 | TypeScript is pinned to 5.9.x. Revisit at the Phase 1 review, including the 7.x line.                                                                                    | TECHNOLOGY_STACK §5                       | Proposed |
+| DR-040 | v1.0 targets desktop browsers only. Minimum supported layout width is 1280 px. Mobile and touch layouts are out of scope.                                                | MVP_SCOPE EX-15; CODING_STANDARDS §8      | Proposed |
+| DR-041 | The Dev Container uses the Node 22 base image with corepack and pnpm 9. A custom Dockerfile is not needed in v1.0.                                                       | TECHNOLOGY_STACK §1                       | Proposed |
+| DR-043 | Architecture-specific event kinds are namespaced as `<architecture-id>/<kind>`.                                                                                          | EVENT_MODEL §4                            | Proposed |
+| DR-044 | Browser support is the current stable Chrome, Edge, Firefox and Safari, with no older version floor.                                                                     | PRODUCT_SPEC S-6                          | Proposed |
+
+---
+
+### B2. Architecture Proposals (Stage 0.2)
+
+| ID     | Proposal                                                                                                                                                                                                                                                            | Reason and document                                                                                                      | Status   |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------- |
+| DR-053 | One clock cycle holds exactly one micro-operation in v1.0. Micro-operation events carry the names of the active control signals.                                                                                                                                    | Keeps the learner's model simple and makes clock step = micro-operation step (MVP-013, MVP-019). SIMULATION_PLATFORM §2. | Proposed |
+| DR-054 | Do not adopt Zustand in v1.0. Use React's `useSyncExternalStore` with a small hand-written store over the controller's `subscribe`. Supersedes DR-035 once approved.                                                                                                | State is small and the controller already provides subscription. Removes a dependency. TECHNOLOGY_STACK §2.5.            | Proposed |
+| DR-055 | Animation starts with CSS transitions and SVG attribute changes. Motion for React is adopted only if needed (DR-064).                                                                                                                                               | Most motion is state-driven. TECHNOLOGY_STACK §2.6.                                                                      | Proposed |
+| DR-056 | Execution history stores one instruction record per instruction (addresses, cycles, before and after changes, explanation). Full snapshots are kept only for the current state and the previous state. Clock-level events are kept only for the latest instruction. | Compact; supports the forward-only timeline; allows future reverse execution. SIMULATION_PLATFORM §7–8.                  | Proposed |
+| DR-057 | Architectures are registered in a composition root in `src/app/`, which passes the list to the platform. The platform's registry defines only the entry type and the lookup.                                                                                        | Corrects the earlier draft that imported BITSHIFT-8 into the platform. SYSTEM_ARCHITECTURE DEP-01, CPU strategy §5.      | Proposed |
+| DR-058 | The platform has no timers. It exposes `beginRun`, `runBatch(n)` and `endRun`. The UI run loop owns timing.                                                                                                                                                         | Keeps results independent of time. Resolves a conflict between SIMULATION_PLATFORM §3 and MODULE_CONTRACTS §3.           | Proposed |
+| DR-059 | No client-side router in v1.0. One workbench view; examples are chosen inside it.                                                                                                                                                                                   | Desktop-only (DR-040) and a single product area set (MVP-025). SYSTEM_ARCHITECTURE §10.                                  | Proposed |
+| DR-060 | The assembler receives the ISA descriptor as an argument and imports no architecture module.                                                                                                                                                                        | Keeps the assembler independent of specific CPUs. SYSTEM_ARCHITECTURE DEP-03.                                            | Proposed |
+| DR-061 | Each architecture supplies an instruction explanation function (MVP-022). It is pure and takes an instruction record. The UI displays its output.                                                                                                                   | Explanations depend on the architecture's semantics. CPU strategy §4.1, §7.                                              | Proposed |
+| DR-062 | Visualization imports no architecture module. The app passes each architecture's visualization adapter to the view layer as a value.                                                                                                                                | Keeps visualization generic. SYSTEM_ARCHITECTURE DEP-04.                                                                 | Proposed |
+| DR-063 | Editor text persistence (DR-048) is an application-layer adapter over browser storage. Every access is wrapped in try and catch. The platform has no storage.                                                                                                       | Keeps the platform storage-free. TECHNOLOGY_STACK §5.                                                                    | Proposed |
 
 ---
 
@@ -93,15 +111,15 @@ A proposal becomes **Approved** only when the product owner says so. Record the 
 
 ### C2. Platform, Events and Assembler
 
-| ID     | Question                                                                                                                                     | Proposal (for review)                              | Status |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ------ |
-| DR-013 | Micro-operation representation: typed objects, RTL-style strings, or functions. Are micro-operations generic events visible to the platform? | Typed objects; visible as `micro-operation` events | Open   |
-| DR-014 | May architectures define their own event kinds?                                                                                              | Yes, namespaced (DR-043)                           | Open   |
-| DR-019 | Assembler syntax: mnemonic case, comment character, number formats, label syntax.                                                            | To be proposed in Phase 3                          | Open   |
-| DR-020 | Assembler directives and output format (for example ORG, DB, listing, hex or binary image).                                                  | To be proposed in Phase 3                          | Open   |
-| DR-024 | Timeline history capacity (bounded ring buffer of instruction entries).                                                                      | 10,000 entries                                     | Open   |
-| DR-027 | Breakpoints during clock-level stepping.                                                                                                     | Checked at instruction boundaries during run only  | Open   |
-| DR-035 | Zustand timing: introduced in Phase 5, or earlier if the controller subscription needs it.                                                   | Phase 5                                            | Open   |
+| ID     | Question                                                                                                                                                  | Proposal (for review)                              | Status |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ------ |
+| DR-013 | Micro-operation representation: typed objects, RTL-style strings, or functions. Are micro-operations generic events visible to the platform?              | Typed objects; visible as `micro-operation` events | Open   |
+| DR-014 | May architectures define their own event kinds?                                                                                                           | Yes, namespaced (DR-043)                           | Open   |
+| DR-019 | Assembler syntax: mnemonic case, comment character, number formats, label syntax.                                                                         | To be proposed in Phase 3                          | Open   |
+| DR-020 | Assembler directives and output format (for example ORG, DB, listing, hex or binary image).                                                               | To be proposed in Phase 3                          | Open   |
+| DR-024 | Timeline history capacity (bounded ring buffer of instruction entries).                                                                                   | 10,000 entries                                     | Open   |
+| DR-027 | Breakpoints during clock-level stepping.                                                                                                                  | Checked at instruction boundaries during run only  | Open   |
+| DR-035 | Zustand timing: introduced in Phase 5, or earlier if the controller subscription needs it. Superseded in part by DR-054 (proposed: do not adopt Zustand). | Phase 5                                            | Open   |
 
 ### C3. Application, Visualization, Performance and Process
 
@@ -131,19 +149,30 @@ A proposal becomes **Approved** only when the product owner says so. Record the 
 
 ---
 
+### C5. Architecture Questions (Stage 0.2)
+
+| ID     | Question                                                                                                                                                                                                                                                         | Proposal (for review)                        | Status |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ------ |
+| DR-064 | Adopt Motion for React for datapath animation (see DR-055).                                                                                                                                                                                                      | Decide at the Phase 4 spike                  | Open   |
+| DR-065 | Tailwind CSS or plain CSS with custom properties for styling.                                                                                                                                                                                                    | Confirm at the start of Phase 4              | Open   |
+| DR-066 | Apply the contract changes listed in CPU_ARCHITECTURE_STRATEGY §4.3 (run operations, `stepClock` naming, explanation hook, control-signal payloads, `CpuSnapshot.tick` meaning). Until applied, the contract documents disagree with the architecture documents. | Apply in the Stage 0.3 review, once approved | Open   |
+
+---
+
 ## Summary
 
 | Category        | Count | Notes                                                            |
 | --------------- | ----- | ---------------------------------------------------------------- |
 | A (established) | 14    | Do not change without the product owner                          |
-| B (proposed)    | 13    | Written into the documents; not final                            |
-| C (unresolved)  | 39    | Includes ISA, platform, assembler, process and product questions |
+| B (proposed)    | 24    | Written into the documents; not final                            |
+| C (unresolved)  | 42    | Includes ISA, platform, assembler, process and product questions |
 
 Each ID appears in exactly one table.
 
 ## Change Log
 
-| Date       | Change                                                                   |
-| ---------- | ------------------------------------------------------------------------ |
-| 2026-11-16 | Initial register created in Phase 0. No item approved.                   |
-| 2026-11-16 | Stage 0.1: added DR-045 to DR-052 (product questions). Nothing approved. |
+| Date       | Change                                                                                                                                                      |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-16 | Initial register created in Phase 0. No item approved.                                                                                                      |
+| 2026-11-16 | Stage 0.1: added DR-045 to DR-052 (product questions). Nothing approved.                                                                                    |
+| 2026-11-16 | Stage 0.2: added DR-053 to DR-066 (architecture proposals and questions); refined DR-034; DR-035 superseded in part by DR-054 (proposed). Nothing approved. |
