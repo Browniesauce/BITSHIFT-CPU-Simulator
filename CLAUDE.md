@@ -11,8 +11,8 @@ Product definition: `docs/product/PRODUCT_SPEC.md`, `MVP_SCOPE.md`, `RELEASE_ROA
 ## 2. Where the Project Is
 
 - **Release:** v1.0, BITSHIFT-8 simulator. Only v1.0 is authorised for planning and implementation. v2.0 to v4.0 are directions only.
-- **Phase:** Phase 0 (product and architecture foundation). Stages 0.1 to 0.3 are accepted by the product owner. **Stage 0.4 has not started.**
-- **Application code:** none. `src/` contains only the placeholder shell. Do not write simulator code until the phase that owns it has started and its prerequisites are approved.
+- **Phase:** Phase 0 (product and architecture foundation). Stages 0.1 to 0.3 are accepted by the product owner. Stage 0.4 (repository foundation) is complete and awaiting acceptance. **Phase 1 has not started.**
+- **Application code:** none. `src/` contains only the placeholder application shell in `src/app/`. The other `src/` directories are empty by design. Do not write simulator code until the phase that owns it has started and its prerequisites are approved.
 
 ## 3. Hierarchy and Workflow
 
@@ -53,7 +53,7 @@ Subsystem map and dependency rules: `docs/architecture/SYSTEM_ARCHITECTURE.md` ย
 - `src/visualization` consumes snapshots, events and view-model adapters. It never mutates CPU state and never invents state changes.
 - Only `src/app` imports concrete architectures and the assembler.
 
-These boundaries are checked by the Phase 1 import test and by review.
+These boundaries are enforced by `pnpm lint` (`eslint.config.js`) and by review.
 
 ## 6. Contracts
 
@@ -88,7 +88,7 @@ Full strategy: `docs/engineering/TEST_STRATEGY.md`. Summary:
 - Platform, architecture, assembler and visualization logic is tested in Node, without React or a browser.
 - Snapshot isolation, determinism, event ordering and the replay invariant, cycle counting, history limits, error handling and breakpoints each have named tests (sections 5.1 to 5.9 of that document).
 - Expected values come from the specification, never from the implementation's output.
-- Commands: `pnpm test`, `pnpm typecheck`, `pnpm format:check`, `pnpm build`.
+- Commands: `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm build`.
 
 ## 9. Documentation Rules
 
@@ -135,7 +135,7 @@ Full list: `docs/product/MVP_SCOPE.md` ยง3.
 
 ## 13. Stack Status
 
-The technology stack is **proposed**; its approval is pending (DR-039). The approved items are: no state library (DR-054) and CSS-first animation (DR-055). Deferred: Motion (DR-064) and Tailwind (DR-065). Current stack and the dependency plan: `docs/architecture/TECHNOLOGY_STACK.md`.
+The technology stack is **proposed**; its approval is pending (DR-039). The approved items are: no state library (DR-054), CSS-first animation (DR-055), ESLint for linting (DR-021), and the Dev Container with Node 24 and pnpm 10 (DR-041). Deferred: Motion (DR-064) and Tailwind (DR-065). Current stack and the dependency plan: `docs/architecture/TECHNOLOGY_STACK.md`.
 
 ## 14. Slash Commands
 

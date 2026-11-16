@@ -28,6 +28,7 @@ A task is done when all of these are true:
 - [ ] The relevant contract and architecture documents were read before the change. The report names them.
 - [ ] Behaviour matches the contract. If the change alters a contract, the contract document and the register are updated in the same change.
 - [ ] `pnpm typecheck` passes (when code changed).
+- [ ] `pnpm lint` passes (when code changed).
 - [ ] `pnpm format:check` passes (when any file changed).
 - [ ] `pnpm test` passes, and no test was removed, weakened or skipped without a register ID (TEST_STRATEGY §12).
 - [ ] The review checklist in CODING_STANDARDS §12 is satisfied, or every exception is recorded.
@@ -45,7 +46,7 @@ A slice is done when, in addition to section 2:
 - [ ] Determinism is covered: the slice's tests include a repeat-run comparison where output is produced (DET-01 for platform changes).
 - [ ] Snapshot isolation is covered for any change that publishes a snapshot, event or history record (SNP-01 to SNP-05).
 - [ ] Error handling is covered: every new `Result` error code is triggered by a test, and every new code is listed in DATA_CONTRACTS §11 (ERR-01).
-- [ ] No simulation-core file imports a forbidden module or global (CODING_STANDARDS §4.2; DET-03 once the Phase 1 test exists).
+- [ ] No simulation-core file imports a forbidden module or global (CODING_STANDARDS §4.2; enforced by `pnpm lint`, DET-03).
 - [ ] No dependency was added without a TECHNOLOGY_STACK §4.2 row.
 
 ---
@@ -99,7 +100,7 @@ A phase is done when:
 
 - [ ] Every stage in the phase is done (section 4).
 - [ ] The phase's exit criteria in DEVELOPMENT_ROADMAP are met, each with a recorded result.
-- [ ] A regression run passes: the full `pnpm test`, `pnpm typecheck`, `pnpm format:check` and `pnpm build`, on a clean install (`pnpm install --frozen-lockfile`).
+- [ ] A regression run passes: the full `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm format:check` and `pnpm build`, on a clean install (`pnpm install --frozen-lockfile`).
 - [ ] The documentation validation pass (section 5) is clean, or each finding is recorded.
 - [ ] The product owner has reviewed the outcome and recorded acceptance in the register change log.
 

@@ -9,16 +9,16 @@ Where a rule duplicates a contract, the contract is the source of truth and this
 
 ## 1. Tooling Baseline
 
-| Tool              | Configuration                                                                                                                                                         | Enforced by       | Command             |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ------------------- |
-| TypeScript        | `tsconfig.json`, `strict: true`, `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`                                                                 | Tool              | `pnpm typecheck`    |
-| Prettier          | `.prettierrc.json` (single quotes, trailing commas, print width 100)                                                                                                  | Tool              | `pnpm format:check` |
-| EditorConfig      | `.editorconfig` (LF, 2-space indent, final newline)                                                                                                                   | Editor and review | —                   |
-| Vitest            | `vite.config.ts` (`tests/**/*.test.{ts,tsx}`)                                                                                                                         | Tool              | `pnpm test`         |
-| Import boundaries | Phase 1 import test (section 5.4)                                                                                                                                     | Test              | `pnpm test`         |
-| Linter            | **Not approved** (DR-021). Until a linter is approved, the rules that a linter would check are enforced by the import test (section 5.4), the test suite, and review. | Review            | —                   |
+| Tool              | Configuration                                                                                                                                                          | Enforced by       | Command                  |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ------------------------ |
+| TypeScript        | `tsconfig.json`, `strict: true`, `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`                                                                  | Tool              | `pnpm typecheck`         |
+| Prettier          | `.prettierrc.json` (single quotes, trailing commas, print width 100)                                                                                                   | Tool              | `pnpm format:check`      |
+| EditorConfig      | `.editorconfig` (LF, 2-space indent, final newline)                                                                                                                    | Editor and review | —                        |
+| Vitest            | `vite.config.ts` (`tests/**/*.test.{ts,tsx}`)                                                                                                                          | Tool              | `pnpm test`              |
+| Import boundaries | Lint rules in `eslint.config.js` (section 4.4), verified by `tests/tooling/lint-boundaries.test.ts`                                                                    | Tool              | `pnpm lint`, `pnpm test` |
+| Linter            | ESLint 10 flat config (`eslint.config.js`): TypeScript recommended rules, module boundaries, forbidden globals, no enums, no default exports, no `@ts-ignore` (DR-021) | Tool              | `pnpm lint`              |
 
-No rule may depend on a tool that has not been approved. Adding a linter needs a DR-021 decision and a TECHNOLOGY_STACK row (section 9).
+No rule may depend on a tool that has not been approved. A new tool needs a register decision and a TECHNOLOGY_STACK row (section 9).
 
 ---
 
@@ -120,9 +120,9 @@ These rules are DEP-01 to DEP-07 in SYSTEM_ARCHITECTURE §6.
 
 ### 4.4 Enforcement
 
-- **Phase 1 test (required):** a test scans imports and global references in the three simulation directories and fails on any item in 4.2 or any import not allowed by 4.1. It uses no new dependency.
+- **Lint (approved, DR-021):** `eslint.config.js` encodes the allowed imports in 4.1 and the forbidden names in 4.2. `pnpm lint` must pass.
 - **Review:** the checklist in section 12 covers the same rules for changes outside the test's scope.
-- **Lint:** a linter may replace the scan when DR-021 is approved.
+- **Rule test:** `tests/tooling/lint-boundaries.test.ts` fails if a boundary rule is weakened or removed. Cross-architecture imports (DEP-02) are added to the lint rules together with the second architecture.
 
 ---
 

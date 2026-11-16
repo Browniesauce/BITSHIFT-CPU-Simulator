@@ -1,6 +1,6 @@
 # BITSHIFT — Test Strategy
 
-**Status:** Stage 0.3. Vitest is installed and `pnpm test` runs. No product tests exist in Phase 0. End-to-end tooling is open (DR-068), and component-test tooling is open (DR-038).
+**Status:** Stage 0.3. Vitest is installed and `pnpm test` runs two tooling tests: an application shell smoke test and the lint boundary-rule tests. No simulator tests exist yet. End-to-end tooling is open (DR-068), and component-test tooling is open (DR-038).
 **Related:** [CODING_STANDARDS.md](CODING_STANDARDS.md), [DEFINITION_OF_DONE.md](DEFINITION_OF_DONE.md), [MODULE_CONTRACTS.md](../contracts/MODULE_CONTRACTS.md), [EVENT_MODEL.md](../contracts/EVENT_MODEL.md), [SIMULATION_PLATFORM.md](../architecture/SIMULATION_PLATFORM.md)
 
 ---
@@ -47,7 +47,9 @@ tests/
 │   └── bitshift-8/        # Conformance suite (Phase 2)
 ├── assembler/             # Assembler stages, golden files, diagnostics (Phase 3)
 ├── integration/           # Assemble → load → run → inspect (Phase 3 onward; grows in Phase 6)
-└── visualization/         # View functions and adapter transforms (first needed in Phase 4)
+├── visualization/         # View functions and adapter transforms (first needed in Phase 4)
+├── app/                   # Application shell smoke test (server-side render, no DOM environment)
+└── tooling/               # Lint boundary-rule tests
 ```
 
 - File names: `<subject>.test.ts`.
@@ -88,11 +90,11 @@ Each item has a stable ID so that the Definition of Done can refer to it. An ite
 
 ### 5.2 Determinism (DET)
 
-| ID     | Test                                                                                                                                                           |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DET-01 | Two fresh controllers, given the same program and the same call sequence, produce identical snapshot, event and history sequences (deep equality, every step). |
-| DET-02 | Running a program with `runBatch(1)`, `runBatch(7)` and `runBatch(1000)` reaches the same final snapshot, the same cycle count and the same events.            |
-| DET-03 | No platform or architecture module references the forbidden globals in CODING_STANDARDS §4.2 (the Phase 1 import test).                                        |
+| ID     | Test                                                                                                                                                                                       |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| DET-01 | Two fresh controllers, given the same program and the same call sequence, produce identical snapshot, event and history sequences (deep equality, every step).                             |
+| DET-02 | Running a program with `runBatch(1)`, `runBatch(7)` and `runBatch(1000)` reaches the same final snapshot, the same cycle count and the same events.                                        |
+| DET-03 | No platform or architecture module references the forbidden globals in CODING_STANDARDS §4.2 (enforced by `pnpm lint`; the rules are verified by `tests/tooling/lint-boundaries.test.ts`). |
 
 ### 5.3 Event Ordering and Replay (EVT)
 
@@ -247,12 +249,13 @@ These tests are the most important in the platform. They run on the fixture in P
 
 ## 11. Commands
 
-| Command             | Purpose                                                                                                               |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `pnpm test`         | Run all tests once. Currently `vitest run --passWithNoTests`; the flag is removed when the first product test exists. |
-| `pnpm typecheck`    | Type-check the project (`tsc --noEmit`).                                                                              |
-| `pnpm format:check` | Verify formatting.                                                                                                    |
-| `pnpm build`        | Type-check and produce the static build.                                                                              |
+| Command             | Purpose                                                  |
+| ------------------- | -------------------------------------------------------- |
+| `pnpm test`         | Run all tests once (`vitest run`). An empty suite fails. |
+| `pnpm typecheck`    | Type-check the project (`tsc --noEmit`).                 |
+| `pnpm lint`         | Run ESLint, including the module-boundary rules.         |
+| `pnpm format:check` | Verify formatting.                                       |
+| `pnpm build`        | Type-check and produce the static build.                 |
 
 Watch mode (`vitest`) is for development only and is not used in review.
 

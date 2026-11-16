@@ -24,3 +24,6 @@ Thumbs.db
 
 # Claude Code local settings (shared settings stay tracked)
 .claude/settings.local.json
+
+# pnpm store created inside the workspace when it is on another filesystem (Dev Container)
+.pnpm-store/

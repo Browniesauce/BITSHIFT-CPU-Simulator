@@ -97,12 +97,12 @@ Each entry gives the responsibility, why it fits, the alternatives considered, a
 - **Responsibility:** installing and locking dependencies.
 - **Why it fits:** strict dependency resolution (a package cannot import what it did not declare); content-addressed storage; consistent installs across platforms.
 - **Alternatives:** npm (default, looser resolution); yarn.
-- **Limitations:** some tools expect a flat `node_modules`, which needs configuration in rare cases. Pinned to 9.x in `packageManager`.
+- **Limitations:** some tools expect a flat `node_modules`, which needs configuration in rare cases. Pinned to 10.x in `packageManager` (`pnpm@10.34.9`) and provided through Corepack.
 
 ### 2.11 Development environment: VS Code with Dev Containers
 
 - **Responsibility:** identical Node, pnpm and tooling on Windows, macOS and Linux.
-- **Why it fits:** the same container runs everywhere; the team does not need to match local installs.
+- **Why it fits:** the same container runs everywhere; the team does not need to match local installs. The image is `mcr.microsoft.com/devcontainers/javascript-node:24-bookworm` (Node 24 LTS) with pnpm 10 through Corepack (DR-041). It is one container: no Compose, no database, no backend.
 - **Alternatives:** local installs only (inconsistent); GitHub Codespaces (needs a hosted service and an account; not a dependency of the product).
 - **Limitations:** Windows and macOS need a container runtime (Docker Desktop or equivalent), which is heavy. Local setup must remain possible as a fallback.
 
@@ -111,12 +111,15 @@ Each entry gives the responsibility, why it fits, the alternatives considered, a
 - **Responsibility:** consistent formatting of code and documentation.
 - **Why it fits:** already in use; zero configuration beyond `.prettierrc.json`.
 - **Alternatives:** Biome (formatter and linter in one tool).
-- **Limitations:** formatting only. Lint rules are decided separately (DR-021).
+- **Limitations:** formatting only. Lint rules are in ESLint (section 2.13).
 
-### 2.13 Linting and import rules: not yet decided
+### 2.13 Linting and import rules: ESLint (DR-021)
 
-- ESLint (rule and plugin ecosystem; more setup) or Biome (single tool; fewer plugins).
-- The import boundaries in SYSTEM_ARCHITECTURE §6 need a rule. Until a tool is approved, review and the Phase 1 import test enforce them (DR-021).
+- **Responsibility:** language rules from CODING_STANDARDS §2 and the module boundaries and forbidden globals from §4, in `eslint.config.js` (ESLint 10 flat config, `typescript-eslint`).
+- **Why it fits:** `no-restricted-imports` and `no-restricted-globals` express the dependency direction directly, with no extra plugin. The rules are tested by `tests/tooling/lint-boundaries.test.ts`.
+- **Alternatives:** Biome (one tool for format and lint; a smaller rule set, and it would replace Prettier). Not adopted.
+- **Limitations:** rules are not type-aware, so type-checked rules are not enabled. Cross-architecture imports (DEP-02) are added with the second architecture. ESLint 10 needs Node 22.13 or newer.
+- The import boundaries in SYSTEM_ARCHITECTURE §6 are enforced by `pnpm lint`. DR-021 is approved by the product owner's Stage 0.4 direction (reading to confirm).
 
 ### 2.14 Version control: Git
 
@@ -146,20 +149,20 @@ No new dependency is proposed in Stage 0.2. Approving DR-054 and DR-055 removes 
 
 ### 4.2 Plan
 
-| Package                                     | Role                  | Phase          | Status                             | Reason                                                       |
-| ------------------------------------------- | --------------------- | -------------- | ---------------------------------- | ------------------------------------------------------------ |
-| react, react-dom                            | UI runtime            | 0 (installed)  | Installed                          | Minimal shell; panel UI; `useSyncExternalStore`              |
-| vite, @vitejs/plugin-react                  | Build and dev server  | 0 (installed)  | Installed                          | Build; React transform                                       |
-| typescript                                  | Type checking         | 0 (installed)  | Installed                          | Contracts                                                    |
-| @types/react, @types/react-dom, @types/node | Types                 | 0 (installed)  | Installed                          | Type checking; config files                                  |
-| vitest                                      | Tests                 | 0 (installed)  | Installed                          | Test runner shared with Vite                                 |
-| prettier                                    | Formatting            | 0 (installed)  | Installed                          | Consistent formatting                                        |
-| @codemirror/* (state, view, language, lint) | Editor                | 3              | Planned                            | MVP-001, MVP-003                                             |
-| tailwindcss (with its Vite plugin)          | Styling               | Frontend stage | **Deferred** (DR-065)              | Not added until the frontend stage decides                   |
-| motion                                      | Animation             | Frontend stage | **Deferred** (DR-064)              | Only if CSS and SVG transitions are shown to be insufficient |
-| jsdom or happy-dom, @testing-library/react  | Component tests       | 5              | Decision DR-038                    | Component tests only                                         |
-| ESLint or Biome                             | Lint and import rules | 1              | Decision DR-021                    | Enforces DEP-01 to DEP-07                                    |
-| zustand                                     | State                 | —              | **Not adopted** (DR-054, approved) | Replaced by React's native state                             |
+| Package                                     | Role                           | Phase                      | Status                             | Reason                                                       |
+| ------------------------------------------- | ------------------------------ | -------------------------- | ---------------------------------- | ------------------------------------------------------------ |
+| react, react-dom                            | UI runtime                     | 0 (installed)              | Installed                          | Minimal shell; panel UI; `useSyncExternalStore`              |
+| vite, @vitejs/plugin-react                  | Build and dev server           | 0 (installed)              | Installed                          | Build; React transform                                       |
+| typescript                                  | Type checking                  | 0 (installed)              | Installed                          | Contracts                                                    |
+| @types/react, @types/react-dom, @types/node | Types                          | 0 (installed)              | Installed                          | Type checking; config files                                  |
+| vitest                                      | Tests                          | 0 (installed)              | Installed                          | Test runner shared with Vite                                 |
+| prettier                                    | Formatting                     | 0 (installed)              | Installed                          | Consistent formatting                                        |
+| @codemirror/* (state, view, language, lint) | Editor                         | 3                          | Planned                            | MVP-001, MVP-003                                             |
+| tailwindcss (with its Vite plugin)          | Styling                        | Frontend stage             | **Deferred** (DR-065)              | Not added until the frontend stage decides                   |
+| motion                                      | Animation                      | Frontend stage             | **Deferred** (DR-064)              | Only if CSS and SVG transitions are shown to be insufficient |
+| jsdom or happy-dom, @testing-library/react  | Component tests                | 5                          | Decision DR-038                    | Component tests only                                         |
+| eslint, @eslint/js, typescript-eslint       | Lint and module-boundary rules | 0 (installed in Stage 0.4) | Installed (DR-021)                 | Enforces DEP-01 to DEP-07 and CODING_STANDARDS §2            |
+| zustand                                     | State                          | —                          | **Not adopted** (DR-054, approved) | Replaced by React's native state                             |
 
 ### 4.3 Candidates Considered and Rejected
 
@@ -206,5 +209,5 @@ No WebAssembly, no Web Workers, no service worker and no network calls in v1.0.
 ## 8. Version Notes
 
 - TypeScript is pinned to 5.9.x. The 7.x line resolved initially, but it was not adopted because it was not validated for this project. Revisit at Phase 1 (DR-036).
-- `@types/node` matches the Node 22 line of the Dev Container image.
+- `@types/node` matches the Node 24 line of the Dev Container image (DR-041).
 - Exact versions are recorded in `pnpm-lock.yaml`.
