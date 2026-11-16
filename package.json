@@ -1,0 +1,21 @@
+{
+  "name": "bitshift",
+  "private": true,
+  "version": "0.0.0",
+  "description": "BITSHIFT — browser-based educational computer architecture simulator",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@9.15.9"
+}
