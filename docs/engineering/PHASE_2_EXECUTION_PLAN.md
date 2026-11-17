@@ -177,21 +177,21 @@ No point is open.
 
 ## 9. Slice Status
 
-| Slice | Owner         | Status      | Verdict | Date | Follow-ups |
-| ----- | ------------- | ----------- | ------- | ---- | ---------- |
-| 2.1-a | Haiku         | Not started | —       | —    | —          |
-| 2.1-b | Haiku         | Not started | —       | —    | —          |
-| 2.2-a | Haiku         | Not started | —       | —    | —          |
-| 2.2-b | Haiku         | Not started | —       | —    | —          |
-| 2.3-a | Haiku         | Not started | —       | —    | —          |
-| 2.3-b | Haiku         | Not started | —       | —    | —          |
-| 2.3-c | Haiku         | Not started | —       | —    | —          |
-| 2.4-a | Haiku         | Not started | —       | —    | —          |
-| 2.4-b | Sonnet        | Not started | —       | —    | —          |
-| 2.4-c | Sonnet        | Not started | —       | —    | —          |
-| 2.4-d | Haiku, Sonnet | Not started | —       | —    | —          |
-| 2.5-a | Haiku, Sonnet | Not started | —       | —    | —          |
-| 2.5-b | Haiku, Sonnet | Not started | —       | —    | —          |
+| Slice | Owner         | Status      | Verdict | Date       | Follow-ups                             |
+| ----- | ------------- | ----------- | ------- | ---------- | -------------------------------------- |
+| 2.1-a | Haiku         | Implemented | —       | 2026-11-17 | Committed in 8ce9ee2; verdict pending. |
+| 2.1-b | Haiku         | Implemented | —       | 2026-11-17 | Committed in 8ce9ee2; verdict pending. |
+| 2.2-a | Haiku         | Implemented | —       | 2026-11-17 | Committed in 8ce9ee2; verdict pending. |
+| 2.2-b | Haiku         | Implemented | —       | 2026-11-17 | Committed in 8ce9ee2; verdict pending. |
+| 2.3-a | Haiku         | Implemented | —       | 2026-11-17 | Committed in 8ce9ee2; verdict pending. |
+| 2.3-b | Haiku         | Not started | —       | —          | —                                      |
+| 2.3-c | Haiku         | Not started | —       | —          | —                                      |
+| 2.4-a | Haiku         | Not started | —       | —          | —                                      |
+| 2.4-b | Sonnet        | Not started | —       | —          | —                                      |
+| 2.4-c | Sonnet        | Not started | —       | —          | —                                      |
+| 2.4-d | Haiku, Sonnet | Not started | —       | —          | —                                      |
+| 2.5-a | Haiku, Sonnet | Not started | —       | —          | —                                      |
+| 2.5-b | Haiku, Sonnet | Not started | —       | —          | —                                      |
 
 ---
 
