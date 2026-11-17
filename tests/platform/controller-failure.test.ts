@@ -246,4 +246,26 @@ describe('recovery (CYC-06, DR-071, DR-077 d)', () => {
     expect(recovered.snapshot.state).toBe('ready');
     expect(recovered.snapshot.cycle).toBe(0);
   });
+
+  it('an architecture reset that throws gives a fault update, and the next reset recovers', () => {
+    const { controller, calls } = loadedHarness({
+      script: TWO_GOOD_CYCLES,
+      hooks: {
+        beforeReset: (n) => {
+          if (n === 1) throw new Error('reset failed');
+        },
+      },
+    });
+    must(controller.stepClock());
+    const failed = controller.reset();
+    expect(failed.reason).toBe('fault');
+    expect(failed.snapshot.state).toBe('faulted');
+    expect(failed.snapshot.lastFault?.code).toBe('PLT-INTERNAL');
+
+    const recovered = controller.reset();
+    expect(calls.createInstance).toBe(2);
+    expect(recovered.reason).toBe('reset');
+    expect(recovered.snapshot.state).toBe('ready');
+    expect(recovered.snapshot.cycle).toBe(0);
+  });
 });

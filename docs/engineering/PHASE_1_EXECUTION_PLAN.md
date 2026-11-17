@@ -265,25 +265,25 @@ A step taken from `ready` applies the step action first (to `paused`), then `hal
 
 ## 10. Slice Status
 
-| Slice | Status              | Verdict                  | Date       | Follow-ups                                                                                                               |
-| ----- | ------------------- | ------------------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------ |
-| 1.1-a | Committed (1fb2322) | APPROVED WITH FOLLOW-UPS | 2026-11-16 | Closed: fillers removed in 1.1-b. Open: narrowing of shared payloads, handled in 1.3-c.                                  |
-| 1.1-b | Committed (db6703d) | APPROVED                 | 2026-11-16 | Closed by DR-079: the register `bits` check goes to 1.1-c; an empty list stays valid.                                    |
-| 1.1-c | Committed (ca750ce) | APPROVED                 | 2026-11-17 | —                                                                                                                        |
-| 1.2-a | Committed (ca750ce) | APPROVED                 | 2026-11-17 | —                                                                                                                        |
-| 1.2-b | Committed (ca750ce) | APPROVED                 | 2026-11-17 | Approved after one fix round: the cause of a failure is now recorded and returned; a malformed load result is contained. |
-| 1.3-a | Committed (2659b9d) | APPROVED WITH FOLLOW-UPS | 2026-11-16 | Neutral register and flag names in `snapshots.test.ts`: done in Batch 2.                                                 |
-| 1.3-b | Committed (2659b9d) | APPROVED                 | 2026-11-16 | Closed by DR-079: payloads are frozen in place.                                                                          |
-| 1.3-c | Committed (ca750ce) | APPROVED WITH FOLLOW-UPS | 2026-11-17 | Eviction uses an array shift; measure its cost in 1.5-c before changing it.                                              |
-| 1.3-d | Committed (2659b9d) | APPROVED                 | 2026-11-16 | Closed by DR-079: the width is not validated.                                                                            |
-| 1.5-a | Committed (ca750ce) | APPROVED                 | 2026-11-17 | Script mnemonics and signal names made neutral in the fix round.                                                         |
-| 1.4-a | Batch 3             | —                        | —          | —                                                                                                                        |
-| 1.4-b | Batch 3             | —                        | —          | —                                                                                                                        |
-| 1.4-c | Batch 3             | —                        | —          | —                                                                                                                        |
-| 1.4-d | Batch 3             | —                        | —          | —                                                                                                                        |
-| 1.4-e | Batch 3             | —                        | —          | —                                                                                                                        |
-| 1.5-b | Batch 4             | —                        | —          | —                                                                                                                        |
-| 1.5-c | Batch 4             | —                        | —          | —                                                                                                                        |
+| Slice | Status              | Verdict                  | Date       | Follow-ups                                                                                                                                                          |
+| ----- | ------------------- | ------------------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1.1-a | Committed (1fb2322) | APPROVED WITH FOLLOW-UPS | 2026-11-16 | Closed: fillers removed in 1.1-b. Open: narrowing of shared payloads, handled in 1.3-c.                                                                             |
+| 1.1-b | Committed (db6703d) | APPROVED                 | 2026-11-16 | Closed by DR-079: the register `bits` check goes to 1.1-c; an empty list stays valid.                                                                               |
+| 1.1-c | Committed (ca750ce) | APPROVED                 | 2026-11-17 | —                                                                                                                                                                   |
+| 1.2-a | Committed (ca750ce) | APPROVED                 | 2026-11-17 | —                                                                                                                                                                   |
+| 1.2-b | Committed (ca750ce) | APPROVED                 | 2026-11-17 | Approved after one fix round: the cause of a failure is now recorded and returned; a malformed load result is contained.                                            |
+| 1.3-a | Committed (2659b9d) | APPROVED WITH FOLLOW-UPS | 2026-11-16 | Neutral register and flag names in `snapshots.test.ts`: done in Batch 2.                                                                                            |
+| 1.3-b | Committed (2659b9d) | APPROVED                 | 2026-11-16 | Closed by DR-079: payloads are frozen in place.                                                                                                                     |
+| 1.3-c | Committed (ca750ce) | APPROVED WITH FOLLOW-UPS | 2026-11-17 | Eviction uses an array shift; measure its cost in 1.5-c before changing it.                                                                                         |
+| 1.3-d | Committed (2659b9d) | APPROVED                 | 2026-11-16 | Closed by DR-079: the width is not validated.                                                                                                                       |
+| 1.5-a | Committed (ca750ce) | APPROVED                 | 2026-11-17 | Script mnemonics and signal names made neutral in the fix round.                                                                                                    |
+| 1.4-a | Batch 3             | —                        | —          | —                                                                                                                                                                   |
+| 1.4-b | Batch 3             | —                        | —          | —                                                                                                                                                                   |
+| 1.4-c | Batch 3             | —                        | —          | —                                                                                                                                                                   |
+| 1.4-d | Batch 3             | —                        | —          | —                                                                                                                                                                   |
+| 1.4-e | Batch 3             | —                        | —          | —                                                                                                                                                                   |
+| 1.5-b | Done                | APPROVED                 | 2026-11-17 | Sonnet lead with four Haiku test agents; audited by the supervisor. No platform defect found. Also closes the reset-throws test left open by the controller review. |
+| 1.5-c | Batch 4             | —                        | —          | —                                                                                                                                                                   |
 
 ---
 

@@ -29,6 +29,8 @@ export interface Hooks {
   readonly beforeCreate?: (n: number) => void;
   /** Runs before the n-th readState across all instances (1-based). May throw. */
   readonly beforeReadState?: (n: number) => void;
+  /** Runs before the n-th instance reset across all instances (1-based). May throw. */
+  readonly beforeReset?: (n: number) => void;
 }
 
 /** Wraps an architecture so that every call on it and on its instances is counted. */
@@ -53,6 +55,7 @@ export function counting(
     reset(...args: []) {
       calls.reset += 1;
       calls.argumentCounts.push(['reset', args.length]);
+      hooks.beforeReset?.(calls.reset);
       instance.reset();
     },
     stepClock(...args: []) {
