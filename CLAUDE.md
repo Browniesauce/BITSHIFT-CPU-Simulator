@@ -11,7 +11,7 @@ Product definition: `docs/product/PRODUCT_SPEC.md`, `MVP_SCOPE.md`, `RELEASE_ROA
 ## 2. Where the Project Is
 
 - **Release:** v1.0, BITSHIFT-8 simulator. Only v1.0 is authorised for planning and implementation. v2.0 to v4.0 are directions only.
-- **Phase:** Phase 1 (simulation platform backbone) is complete in the repository and awaits product-owner acceptance. Exit record: `docs/engineering/PHASE_1_EXECUTION_PLAN.md` Appendix A. **Phase 2 has not started** and is blocked by DR-001 to DR-018.
+- **Phase:** Phase 1 (simulation platform backbone) is complete and accepted. **Phase 2 (BITSHIFT-8 CPU) is authorised and in progress** (DR-084). Specification: `docs/specifications/BITSHIFT-8_ISA.md`. Slices, owners and status: `docs/engineering/PHASE_2_EXECUTION_PLAN.md`. Phase 2 changes only `src/architectures/bitshift-8/` and its tests; the Phase 1 platform is not modified.
 - **Application code:** `src/platform/` holds the finished platform. `src/app/` holds the placeholder shell. The other `src/` directories are empty by design. Do not write code for a phase that has not started.
 
 ## 3. Hierarchy and Workflow
@@ -128,7 +128,7 @@ Do not describe anything as passing unless it was run and seen to pass.
 7. Every slice has testable acceptance criteria.
 8. Do not overwrite a file without reading it first.
 9. Prefer minimal, maintainable solutions.
-10. Do not invent BITSHIFT-8 instructions, flags, cycle counts, micro-operation sequences or control-signal names. Those come from the Phase 2 specification (DR-001 to DR-018, DR-011, DR-013).
+10. Do not invent BITSHIFT-8 instructions, flags, cycle counts, micro-operation sequences, control-signal names or events. Every BITSHIFT-8 value comes from the approved specification, `docs/specifications/BITSHIFT-8_ISA.md`. If something seems to be missing from it, stop and report.
 
 ## 12. Out of Scope for v1.0
 

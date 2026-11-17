@@ -387,7 +387,7 @@ Codes are stable identifiers, written in upper-case with hyphens, grouped by pre
 | `PLT-`                     | Platform controller and lifecycle               | `PLT-NO-PROGRAM`, `PLT-RUNNING`, `PLT-NOT-RUNNING`, `PLT-ALREADY-RUNNING`, `PLT-ARGUMENT`, `PLT-BREAKPOINT-RANGE`, `PLT-MEMORY-RANGE`, `PLT-ARCHITECTURE-MISMATCH`, `PLT-EVENT-NAMESPACE`, `PLT-INTERNAL` |
 | `ASM-`                     | Assembler                                       | `ASM-UNKNOWN-MNEMONIC`. The full catalogue is written in Phase 3.                                                                                                                                         |
 | `APP-`                     | Application layer                               | `APP-PERSISTENCE-UNAVAILABLE`                                                                                                                                                                             |
-| `<architecture-id>/<CODE>` | Architecture-reported faults                    | Defined by each architecture. BITSHIFT-8 codes are defined in Phase 2 (DR-016).                                                                                                                           |
+| `<architecture-id>/<CODE>` | Architecture-reported faults and load errors    | Defined by each architecture. BITSHIFT-8 (DR-083, BITSHIFT-8_ISA §12): `bitshift-8/UNDEFINED-OPCODE` (fault), `bitshift-8/LOAD-MISMATCH` and `bitshift-8/LOAD-RANGE` (load errors).                       |
 
 The distinction between `Result` errors, faults and exceptions is defined in [SIMULATION_PLATFORM.md](../architecture/SIMULATION_PLATFORM.md) §9 and summarised in [CODING_STANDARDS.md](../engineering/CODING_STANDARDS.md) §6.
 

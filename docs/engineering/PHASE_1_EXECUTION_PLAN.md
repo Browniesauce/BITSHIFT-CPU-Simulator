@@ -1,6 +1,6 @@
 | 1.4-e | Done | APPROVED | 2026-11-17 | As 1.4-a. |
 
-**Status:** Revised 2026-11-17. **Phase 1 is complete in the repository: all 17 slices are approved.** It awaits product-owner acceptance. The exit record, measurements and remaining technical debt are in Appendix A. Phase 2 has not started.
+**Status:** **Phase 1 was accepted by the product owner on 2026-11-17** (decision register change log). All 17 slices are approved; 561 tests pass at e4014b5. Appendix A is the exit record. Items that stay open are listed in A.1 (deferred rows) and A.4 (technical debt). Phase 2 has not started; its specification proposal is `docs/specifications/PHASE_2_SPECIFICATION_REVIEW.md`.
 **Related:** [PHASE_1_READINESS_REVIEW.md](PHASE_1_READINESS_REVIEW.md) (analysis behind this plan), [BITSHIFT_SUPERVISOR.md](BITSHIFT_SUPERVISOR.md), [DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md), [MODULE_CONTRACTS.md](../contracts/MODULE_CONTRACTS.md), [DATA_CONTRACTS.md](../contracts/DATA_CONTRACTS.md), [EVENT_MODEL.md](../contracts/EVENT_MODEL.md), [SIMULATION_PLATFORM.md](../architecture/SIMULATION_PLATFORM.md), [TEST_STRATEGY.md](TEST_STRATEGY.md), [DECISION_REGISTER.md](../decisions/DECISION_REGISTER.md)
 
 This plan cuts Phase 1 into 17 slices. It does not restate the contracts. Each slice names the contract sections that govern it.
@@ -308,7 +308,7 @@ Recorded by the engineering supervisor on 2026-11-17. The assignments for earlie
 | Performance target met                                     | DR-031                            | DEFERRED | DR-031 is still open and has no reference machine. The measured figures are in A.2.                                                             |
 | History default capacity                                   | DR-024                            | DEFERRED | Open. A.2 supplies the figures for the decision. Needed by the composition root, not by the platform.                                           |
 | Verified on Node 24 in the Dev Container                   | DR-041                            | DEFERRED | The host used for every check runs Node 22.19. The container check is the product owner's.                                                      |
-| Product-owner acceptance recorded in the register          | DEFINITION_OF_DONE §7             | PENDING  | —                                                                                                                                               |
+| Product-owner acceptance recorded in the register          | DEFINITION_OF_DONE §7             | PASS     | Accepted 2026-11-17; recorded in the register change log                                                                                        |
 
 ### A.2 Measurements
 

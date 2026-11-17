@@ -122,10 +122,10 @@ This roadmap is a sequence of stages, not a task list. Slices are suggested grou
 
 - **Objective:** State storage for BITSHIFT-8.
 - **Scope:** Registers from the ISA, flags, 256-byte memory, reset contents, PC wrap.
-- **Suggested slices:** (1) register and flag definitions; (2) memory with bounds checks; (3) reset and PC wrap.
+- **Suggested slices:** (1) register and flag definitions; (2) memory, program load with its range check, reset and PC wrap.
 - **Dependencies:** Approved ISA; Phase 1.
 - **Deliverables:** Descriptor, registers, memory modules.
-- **Acceptance criteria:** Reset state matches spec; PC wraps from 0xFF to 0x00; memory rejects addresses outside 0–255 with a diagnostic.
+- **Acceptance criteria:** Reset state matches spec; PC wraps from 0xFF to 0x00; the program loader rejects, with a diagnostic, an image whose start address and length exceed the 256-byte memory. Addresses are 8 bits, so no CPU memory access can be out of range and no such check exists inside the CPU (DR-084).
 
 ### Stage 2.2 — ALU
 
