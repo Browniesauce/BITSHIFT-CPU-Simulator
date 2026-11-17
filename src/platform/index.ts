@@ -40,3 +40,5 @@ export type {
 export { validateMemoryRange } from './memory-range';
 export { createArchitectureRegistry } from './registry';
 export type { ArchitectureRegistry } from './registry';
+export { createController } from './controller';
+export type { ControllerOptions, ExecutionController } from './controller';

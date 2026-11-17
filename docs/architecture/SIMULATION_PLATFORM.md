@@ -83,7 +83,7 @@ stateDiagram-v2
   [*] --> ready: create
   ready --> running: beginRun
   paused --> running: beginRun (resume)
-  running --> paused: endRun (pause)
+  running --> paused: endRun (pause) or breakpoint stop
   ready --> paused: stepClock or stepInstruction
   paused --> paused: stepClock or stepInstruction
   running --> halted: halt reported
@@ -119,7 +119,7 @@ Rules:
 
 - A request that cannot make progress because the CPU has halted or faulted returns `Ok` with zero cycles. The state itself explains why nothing ran.
 - A request that conflicts with the caller's own run state (for example stepping while running) returns a `Result` error. The caller must change state first.
-- A request with no program loaded returns `PLT-NO-PROGRAM`, except `reset`.
+- With no program loaded, `stepClock`, `stepInstruction` and `beginRun` return `PLT-NO-PROGRAM`, in every lifecycle state; `load` and `reset` are always allowed; `runBatch` and `endRun` return `PLT-NOT-RUNNING` (DR-077 a). Arguments are checked before anything else (DR-080).
 - Pause and resume are `endRun` and `beginRun`. Resume continues from the current state. It is not a restart.
 
 ### 3.3 Who Owns the Timing (DR-058, approved)
@@ -161,8 +161,8 @@ All operations are synchronous and deterministic. Each call returns `Result` whe
 ## 6. Breakpoints
 
 - A breakpoint is an address, validated against `[0, 2^addressBits)`. The architecture never receives it.
-- **During `runBatch`:** the controller compares the snapshot's `programCounter` with the set after each instruction boundary. A match stops the batch, and the update carries `breakpointHit`.
-- **During `stepClock` and `stepInstruction`:** the controller does not stop, because the step already completed. If the resulting program counter is in the set, the update reports `breakpointHit`. Whether clock steps should also stop is open (DR-027).
+- **During `runBatch`:** the controller compares the committed `programCounter` with the set after each instruction boundary. A match stops the batch and pauses the controller; the update has reason `breakpoint` and carries `breakpointHit`. It is not a fault (DR-076).
+- **During `stepClock` and `stepInstruction`:** the controller never stops for a breakpoint. The update reports `breakpointHit` only when the call completed at least one cycle, ended on an instruction boundary, and the program counter is in the set (DR-027).
 - The breakpoint program counter comes from the architecture's snapshot, so breakpoints do not depend on the deferred descriptor field (SC-14, DR-022).
 - Breakpoints persist across `load` and `reset`.
 

@@ -289,7 +289,7 @@ export interface ControllerUpdate {
 }
 ```
 
-`reason` for a run batch is `'run-batch'` when the batch ran its full cycle budget. It is the stop cause (`'breakpoint'`, `'halt'` or `'fault'`) when the batch stopped early.
+`reason` follows one rule for every advancing call (DR-077 c): `'fault'` if the call ended in a fault, else `'halt'` if it ended in a halt, else `'breakpoint'` if a run batch stopped at a breakpoint, else the request's own reason (`'clock-step'`, `'instruction-step'`, `'run-batch'`). A batch that halts on its last budgeted cycle reports `'halt'`. A request that makes no progress in `halted` or `faulted` reports its own reason.
 
 ---
 

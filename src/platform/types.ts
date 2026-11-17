@@ -27,7 +27,7 @@ export interface ArchitectureDescriptor {
 /** Definition of one register in a descriptor (DATA_CONTRACTS §3.2). */
 export interface RegisterDefinition {
   readonly name: string; // unique within the descriptor
-  readonly bits: number; // positive integer, at most wordBits for word registers
+  readonly bits: number; // positive integer
   readonly role: RegisterRole;
   readonly programmerVisible: boolean;
 }

@@ -1,6 +1,6 @@
-# BITSHIFT — Phase 1 Execution Plan: Simulation Platform Backbone
+| 1.4-e | Done | APPROVED | 2026-11-17 | As 1.4-a. |
 
-**Status:** Revised 2026-11-17. Batches 1 and 2 are done, approved and committed. **Next: Batch 3, the controller (Appendix A).** No slice is gated.
+**Status:** Revised 2026-11-17. Batches 1, 2 and 3 are done. The controller (Stage 1.4) is implemented, independently reviewed and awaiting product-owner acceptance. **Next: Batch 4 (slices 1.5-b and 1.5-c).** No slice is gated.
 **Related:** [PHASE_1_READINESS_REVIEW.md](PHASE_1_READINESS_REVIEW.md) (analysis behind this plan), [BITSHIFT_SUPERVISOR.md](BITSHIFT_SUPERVISOR.md), [DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md), [MODULE_CONTRACTS.md](../contracts/MODULE_CONTRACTS.md), [DATA_CONTRACTS.md](../contracts/DATA_CONTRACTS.md), [EVENT_MODEL.md](../contracts/EVENT_MODEL.md), [SIMULATION_PLATFORM.md](../architecture/SIMULATION_PLATFORM.md), [TEST_STRATEGY.md](TEST_STRATEGY.md), [DECISION_REGISTER.md](../decisions/DECISION_REGISTER.md)
 
 This plan cuts Phase 1 into 17 slices. It does not restate the contracts. Each slice names the contract sections that govern it.
@@ -54,7 +54,7 @@ This plan cuts Phase 1 into 17 slices. It does not restate the contracts. Each s
 
 Each amendment is written by the slice that implements it, in the same change as the code (CLAUDE.md §6). The lead implementation agent writes contract text; sub-agents do not. Exact wording: PHASE_1_READINESS_REVIEW §1, §2.6, §3 and §4, and the register rows.
 
-**Done in Batch 2:** DR-074 (instance and architecture documents, TEST_STRATEGY), DR-077 b, f, g, DR-078 b, DR-079 item 1 and the empty-registry line. **Done by the supervisor on 2026-11-17 (decisions with no implementing slice):** DR-080 items 1, 3 and 4.
+**Done in Batch 3:** every row of the table below. **Done in Batch 2:** DR-074 (instance and architecture documents, TEST_STRATEGY), DR-077 b, f, g, DR-078 b, DR-079 item 1 and the empty-registry line. **Done by the supervisor on 2026-11-17 (decisions with no implementing slice):** DR-080 items 1, 3 and 4.
 
 | Decision                | Document and section                                                                    | Slice |
 | ----------------------- | --------------------------------------------------------------------------------------- | ----- |
@@ -209,12 +209,12 @@ A call runs this once or many times, then publishes once: it builds the snapshot
 
 Work runs in batches. One lead implementation agent owns each batch, delegates bounded tasks to sub-agents, integrates, and runs validation. The supervisor audits each batch before the next starts, and each batch is committed on its own.
 
-| Batch | Slices                                                                             | Shape                                                                                                                                                                                        |
-| ----- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | 1.1-a, 1.1-b, 1.3-a, 1.3-b, 1.3-d                                                  | Done and approved.                                                                                                                                                                           |
-| 2     | Step 0 (DR-074 contract and type revision), then 1.1-c, 1.2-a, 1.2-b, 1.3-c, 1.5-a | Done and approved.                                                                                                                                                                           |
-| 3     | 1.4-a → 1.4-b → 1.4-c → 1.4-d → 1.4-e                                              | Sequential. All five change `controller.ts`, so the implementation cannot run in parallel. The lead writes the controller; the test file of each slice is delegated. Assignment: Appendix A. |
-| 4     | 1.5-b, 1.5-c                                                                       | 1.5-b first; its replay helper and determinism tests can be delegated separately.                                                                                                            |
+| Batch | Slices                                                                             | Shape                                                                                                                                              |
+| ----- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | 1.1-a, 1.1-b, 1.3-a, 1.3-b, 1.3-d                                                  | Done and approved.                                                                                                                                 |
+| 2     | Step 0 (DR-074 contract and type revision), then 1.1-c, 1.2-a, 1.2-b, 1.3-c, 1.5-a | Done and approved.                                                                                                                                 |
+| 3     | 1.4-a → 1.4-b → 1.4-c → 1.4-d → 1.4-e                                              | Done. Implemented directly by the supervisor on the product owner's instruction, then reviewed independently by Sonnet. Specification: Appendix A. |
+| 4     | 1.5-b, 1.5-c                                                                       | 1.5-b first; its replay helper and determinism tests can be delegated separately.                                                                  |
 
 The assignment for Batch 4 is written when Batch 3 is approved.
 

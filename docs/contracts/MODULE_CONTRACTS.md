@@ -205,7 +205,7 @@ export interface ExecutionController {
 
   /** Ready or paused → running. Errors: PLT-NO-PROGRAM, PLT-ALREADY-RUNNING. No effect when halted or faulted (see §2.4.2). */
   beginRun(): Result<ControllerUpdate, Diagnostic>;
-  /** Run up to maxCycles clock cycles. Errors: PLT-NOT-RUNNING, PLT-ARGUMENT. */
+  /** Run up to maxCycles clock cycles. maxCycles is a positive integer. Errors: PLT-ARGUMENT, PLT-NOT-RUNNING. */
   runBatch(maxCycles: number): Result<ControllerUpdate, Diagnostic>;
   /** Running → paused. Errors: PLT-NOT-RUNNING. */
   endRun(): Result<ControllerUpdate, Diagnostic>;
@@ -222,23 +222,24 @@ export interface ExecutionController {
 
 #### 2.4.1 Operation Semantics
 
-| Operation         | Allowed from                   | Effect                                                                                                    | Cycles completed |
-| ----------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------- | ---------------- |
-| `load`            | ready, paused, halted, faulted | Clears history and the cycle counter; state → ready; keeps breakpoints                                    | 0                |
-| `reset`           | any                            | Restores post-load state; cycle counter → 0; clears history; state → ready; keeps program and breakpoints | 0                |
-| `setBreakpoints`  | any                            | Replaces the set                                                                                          | 0                |
-| `beginRun`        | ready, paused → running        | Sets state running                                                                                        | 0                |
-| `runBatch(n)`     | running                        | Runs up to `n` cycles; stops early on halt, fault or breakpoint                                           | 0 to `n`         |
-| `endRun`          | running → paused               | Sets state paused                                                                                         | 0                |
-| `stepClock`       | ready, paused                  | Runs one cycle                                                                                            | 0 or 1           |
-| `stepInstruction` | ready, paused                  | Runs to the next instruction boundary, or to halt or fault                                                | 0 or more        |
+| Operation         | Allowed from                   | Effect                                                                                                                                                                     | Cycles completed |
+| ----------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `load`            | ready, paused, halted, faulted | Clears history and the cycle counter; state → ready; keeps breakpoints                                                                                                     | 0                |
+| `reset`           | any                            | Restores post-load state; cycle counter → 0; clears history; state → ready; keeps program and breakpoints                                                                  | 0                |
+| `setBreakpoints`  | any                            | Replaces the set                                                                                                                                                           | 0                |
+| `beginRun`        | ready, paused → running        | Sets state running. Needs a loaded program                                                                                                                                 | 0                |
+| `runBatch(n)`     | running                        | `n` is a positive integer, checked first (DR-077 e). Makes at most `n` clock steps; stops early on halt, fault or breakpoint. A breakpoint stop sets state paused (DR-076) | 0 to `n`         |
+| `endRun`          | running → paused               | Sets state paused                                                                                                                                                          | 0                |
+| `stepClock`       | ready, paused                  | Runs one cycle                                                                                                                                                             | 0 or 1           |
+| `stepInstruction` | ready, paused                  | Composed by the controller from clock steps (DR-074): runs to the next instruction boundary, or to halt or fault                                                           | 0 or more        |
 
 #### 2.4.2 Requests That Cannot Make Progress
 
 - `stepClock`, `stepInstruction` and `beginRun` requested in `halted` or `faulted` return `Ok` with `cyclesCompleted` 0. The state does not change. This is the existing rule (SIMULATION_PLATFORM §3.2).
 - `beginRun` requested while `running` returns `PLT-ALREADY-RUNNING`.
 - `stepClock` or `stepInstruction` requested while `running` returns `PLT-RUNNING`. The caller must pause first.
-- Any step, run or load request with no program loaded returns `PLT-NO-PROGRAM`, except `reset`, which always succeeds.
+- With no program loaded, `stepClock`, `stepInstruction` and `beginRun` return `PLT-NO-PROGRAM`, in every lifecycle state. `load` and `reset` are always allowed with no program. `runBatch` and `endRun` return `PLT-NOT-RUNNING`, because no run can be active (DR-077 a).
+- Check order for every request (DR-080): the argument first; then `PLT-NO-PROGRAM`; then the lifecycle refusal; then the zero-progress answer for `halted` and `faulted`. A zero-progress answer returns the same snapshot object and does not call the architecture.
 
 #### 2.4.3 Cycle Counting (DR-067, approved)
 
@@ -251,25 +252,34 @@ The controller owns the only authoritative cycle counter.
    - a `Result` error returned before the architecture is called (the architecture is not called);
    - a step whose outcome carries a `fault` (its `cyclesCompleted` is 0 by invariant, DATA_CONTRACTS §5);
    - an exception from the architecture (the controller records `PLT-INTERNAL`; the counter is unchanged).
+
+   The controller composes `stepInstruction` and `runBatch` from clock steps and commits after each one (DR-074). When a later cycle of such a call fails, the cycles completed before it stay counted and published. There is no instruction-level rollback.
+
 5. Halt, fault and breakpoint handling never add to the counter. They change lifecycle state or report a breakpoint hit. They do not advance time.
 6. The snapshot's `cycle` and every `ControllerUpdate` report the counter value after the call.
 
 #### 2.4.4 Breakpoint Semantics
 
 - Breakpoints are platform data. The architecture never receives them.
-- During `runBatch`, the controller compares the snapshot's `programCounter` with the breakpoint set after each instruction boundary. A match stops the batch, and the update's `breakpointHit` carries the address.
-- During `stepClock` and `stepInstruction`, the controller does not stop, because a step already completed. If the resulting program counter is in the set, the update reports `breakpointHit`. Whether clock steps should also stop is open (DR-027).
+- During `runBatch`, the controller compares the committed `programCounter` with the breakpoint set after each instruction boundary. A match stops the batch: the state becomes `paused`, the update's reason is `breakpoint`, and `breakpointHit` carries the address (DR-076). A breakpoint is never a fault: `lastFault` is untouched and no `fault` event is emitted. The run is resumed with `beginRun`. A breakpoint on the address where a run starts does not stop that run, because no instruction boundary has been crossed yet.
+- During `stepClock` and `stepInstruction`, the controller never stops or changes lifecycle state because of a breakpoint. The update reports `breakpointHit` only when the call completed at least one cycle, its last cycle ended an instruction, and the program counter is in the set (DR-027).
+- A call that ends in halt or fault reports no `breakpointHit`.
+- `setBreakpoints` publishes no update and notifies no listener.
 
 #### 2.4.5 Error Handling Inside the Controller
 
-- `PLT-INTERNAL`: if the architecture throws, the controller sets state `faulted`, records the diagnostic in `lastFault`, emits a `fault` event, and counts no cycle. The instance is treated as unreliable. The controller creates a new instance and reloads the last program on the next `reset`. Until then, step and run requests return `Ok` with 0 cycles.
+- `PLT-INTERNAL`: if the architecture throws, in a step, a `load`, a `reset` or a state read, the controller sets state `faulted`, records the diagnostic in `lastFault`, emits a `fault` event, and counts no cycle. The call returns `Ok` with that `fault` update (DR-077 d). An event batch the platform rejects (`PLT-EVENT-NAMESPACE`) is handled the same way. The instance is treated as unreliable and is never read again. The published snapshot is the last committed state.
+- Recovery: the next `reset` or `load` first replaces the instance; `reset` also reloads the last accepted program. If the replacement fails, the controller stays `faulted`; `reset` still returns an update and never throws. Until recovery, step and `beginRun` requests return `Ok` with 0 cycles. After an ordinary fault the instance is kept.
+- If the instance cannot be created or read when the controller is created, `createController` returns `PLT-INTERNAL`, because no snapshot exists to publish.
+- The platform does not log (DR-080).
 - The controller never swallows an exception without recording it.
 
 #### 2.4.6 Other Rules
 
 - Synchronous. Each call completes before it returns. The subscriber notifications for that call run before it returns.
+- Listeners (DR-077 h, DR-080): after the state is committed, the controller copies the listener list and calls each listener once, in subscription order. If a listener throws, notification stops at once and the exception reaches the caller; the remaining listeners are not called for that update; the CPU does not fault and the committed state stays. A listener added or removed during a notification takes effect from the next one. A state-changing call (`load`, `reset`, `setBreakpoints`, `beginRun`, `runBatch`, `endRun`, `stepClock`, `stepInstruction`) made from inside a notification throws as a programmer error; reads and subscriptions are allowed. A `Result` error is returned to the caller only and is not delivered to listeners.
 - Deterministic (SIMULATION_PLATFORM §5). No timers. No randomness. The result depends only on the sequence of calls.
-- `snapshot()` and `history()` return frozen objects. A new object is created only when the underlying state changes.
+- `snapshot()` and `history()` return frozen objects. A new object is created only when the underlying state changes. A successful `load` and every `reset` publish a new snapshot object.
 - The controller is the only holder of the architecture instance.
 
 ### 2.5 Event System
@@ -345,7 +355,7 @@ export interface BreakpointSet {
 export function createBreakpointSet(): BreakpointSet;
 ```
 
-- **Responsibility:** the address set and its validation. `replace` rejects any address outside `[0, 2^addressBits)`, and leaves the old set unchanged on error.
+- **Responsibility:** the address set and its validation. `replace` rejects any address outside `[0, 2^addressBits)`, and leaves the old set unchanged on error. It does not validate `addressBits` itself; the controller passes the width from a descriptor the registry has validated (DR-079).
 - **Errors:** `PLT-BREAKPOINT-RANGE`, `PLT-ARGUMENT` (non-integer).
 - **Ownership:** platform, owned by the controller.
 - **Dependencies:** platform types.

@@ -47,7 +47,7 @@ export interface ExecutionEvent<K extends string = string, P = unknown> {
 
 The platform does not reorder events. The emission order of the architecture is the sequence order. Architectures never set `cycle` or `sequence` (MODULE_CONTRACTS §2.5, `stampEvents`).
 
-**Faults.** A faulting step has no events (DATA_CONTRACTS §5). The platform emits one `fault` event of its own (section 3.3) at the counter value of the step's start. It has `sequence` 0 and the counter value unchanged, because the fault completed no cycle.
+**Faults.** A faulting step has no events (DATA_CONTRACTS §5). The platform emits one `fault` event of its own (section 3.3) at the counter value of the step's start. Its `sequence` is the next free sequence in that cycle, which is the number of events already published with that cycle, and the counter value is unchanged, because the fault completed no cycle (DR-075).
 
 ---
 
@@ -161,7 +161,7 @@ If the architecture has no `'program-counter'` role register, the replay invaria
 | Event payload values               | Architecture (content); platform (freezing) | Architecture      | Subscribers                         |
 | `fault` event                      | Platform                                    | Platform          | Subscribers                         |
 
-Subscribers and visualization never write events and never assign cycles.
+Subscribers and visualization never write events and never assign cycles. Payloads are deep-frozen in place when the platform stamps them; they are not copied (DR-079).
 
 ---
 
