@@ -100,8 +100,9 @@ describe('stepInstruction (CYC-03, DR-074)', () => {
       const previous = all[i - 1];
       const current = all[i];
       if (previous === undefined || current === undefined) throw new Error('missing event');
+      // A new cycle restarts the sequence at 0; the same cycle continues it by exactly 1.
       const ordered =
-        current.cycle > previous.cycle ||
+        (current.cycle > previous.cycle && current.sequence === 0) ||
         (current.cycle === previous.cycle && current.sequence === previous.sequence + 1);
       expect(ordered).toBe(true);
     }
@@ -195,6 +196,33 @@ describe('history (HST-04 to HST-07)', () => {
     expect(update.events).toEqual(eventsCopy);
     expect(historyThen).toEqual([EXPECTED_HISTORY[0]]);
   });
+});
+
+describe('reset and load leave what was already delivered untouched (HST-04)', () => {
+  it.each(['reset', 'load'] as const)(
+    'a %s does not change delivered snapshots, events or history arrays',
+    (action) => {
+      const { controller } = loadedHarness();
+      const update = must(controller.stepInstruction());
+      const historyThen = controller.history();
+      const snapshotCopy = structuredClone(update.snapshot);
+      const eventsCopy = structuredClone(update.events);
+      const historyCopy = structuredClone(historyThen);
+      expect(historyThen).toHaveLength(1);
+
+      if (action === 'reset') controller.reset();
+      else must(controller.load(controllerImage()));
+
+      // The controller is back at the start and its history is empty ...
+      expect(controller.history()).toEqual([]);
+      expect(controller.snapshot().cycle).toBe(0);
+      // ... while everything handed out before is exactly as it was.
+      expect(update.snapshot).toEqual(snapshotCopy);
+      expect(update.events).toEqual(eventsCopy);
+      expect(historyThen).toEqual(historyCopy);
+      expect(historyThen).toHaveLength(1);
+    },
+  );
 });
 
 function controllerImage(): Parameters<ReturnType<typeof loadedHarness>['controller']['load']>[0] {

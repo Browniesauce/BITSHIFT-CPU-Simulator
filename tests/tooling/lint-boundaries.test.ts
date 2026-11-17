@@ -106,6 +106,54 @@ describe('simulation core restrictions (CODING_STANDARDS section 4.2)', () => {
     expect(await firedRules('src/platform/x.ts', code)).toContain('no-restricted-globals');
   });
 
+  const moreGlobals: Array<[string, string, string]> = [
+    ['sessionStorage', 'src/platform/x.ts', 'export const a = sessionStorage;'],
+    ['navigator', 'src/platform/x.ts', 'export const a = navigator;'],
+    ['Date.now', 'src/architectures/bitshift-8/x.ts', 'export const a: number = Date.now();'],
+    ['performance.now', 'src/assembler/x.ts', 'export const a: number = performance.now();'],
+  ];
+
+  it.each(moreGlobals)('rejects %s in the simulation core', async (_name, filePath, code) => {
+    expect(await firedRules(filePath, code)).toContain('no-restricted-globals');
+  });
+
+  const randomness: Array<[string, string, string]> = [
+    ['Math.random in the platform', 'src/platform/x.ts', 'export const a: number = Math.random();'],
+    [
+      'Math.random in the assembler',
+      'src/assembler/x.ts',
+      'export const a: number = Math.random();',
+    ],
+    [
+      'crypto.getRandomValues in the platform',
+      'src/platform/x.ts',
+      'export const a = crypto.getRandomValues(new Uint8Array(1));',
+    ],
+    [
+      'crypto.getRandomValues in the architectures',
+      'src/architectures/bitshift-8/x.ts',
+      'export const a = crypto.getRandomValues(new Uint8Array(1));',
+    ],
+  ];
+
+  it.each(randomness)('rejects %s', async (_name, filePath, code) => {
+    expect(await firedRules(filePath, code)).toContain('no-restricted-properties');
+  });
+
+  it('finds no forbidden global or randomness in the real simulation core', async () => {
+    const real = new ESLint({ cwd: process.cwd(), errorOnUnmatchedPattern: false });
+    const results = await real.lintFiles(['src/platform', 'src/architectures', 'src/assembler']);
+    const hits = results.flatMap((r) =>
+      r.messages
+        .filter(
+          (m) => m.ruleId === 'no-restricted-globals' || m.ruleId === 'no-restricted-properties',
+        )
+        .map((m) => `${r.filePath}:${String(m.line)} ${String(m.ruleId)}`),
+    );
+    expect(hits).toEqual([]);
+    expect(results.some((r) => r.filePath.includes('platform'))).toBe(true);
+  });
+
   it('rejects Math.random in the architectures', async () => {
     const code = 'export const a: number = Math.random();';
     expect(await firedRules('src/architectures/bitshift-8/x.ts', code)).toContain(

@@ -80,13 +80,13 @@ Each item has a stable ID so that the Definition of Done can refer to it. An ite
 
 ### 5.1 Snapshot Isolation (SNP)
 
-| ID     | Test                                                                                                                                      |
-| ------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| SNP-01 | After a snapshot is taken, stepping the instance does not change the earlier snapshot's registers, flags, memory or program counter.      |
-| SNP-02 | Mutating the memory array returned by `readMemory`, or by a snapshot, does not change the instance or later reads.                        |
-| SNP-03 | Snapshot objects, their arrays and published events are frozen: an attempt to assign a field throws in strict mode.                       |
-| SNP-04 | `controller.snapshot()` returns the same object for repeated calls with no state change, and a new object after a change.                 |
-| SNP-05 | The architecture's `readState()` shares no array or buffer with the instance: changing its result does not change the next `readState()`. |
+| ID     | Test                                                                                                                                                                                                                                                        |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SNP-01 | After a snapshot is taken, stepping the instance does not change the earlier snapshot's registers, flags, memory or program counter.                                                                                                                        |
+| SNP-02 | Mutating the memory array returned by `readMemory`, or by a snapshot, does not change the instance or later reads.                                                                                                                                          |
+| SNP-03 | Snapshot objects, their `registers` and `flags` arrays, and published events are frozen: an attempt to assign a field throws in strict mode. `memory` is a `Uint8Array`, which cannot be frozen (DATA_CONTRACTS §4.4); its isolation is verified by SNP-02. |
+| SNP-04 | `controller.snapshot()` returns the same object for repeated calls with no state change, and a new object after a change.                                                                                                                                   |
+| SNP-05 | The architecture's `readState()` shares no array or buffer with the instance: changing its result does not change the next `readState()`.                                                                                                                   |
 
 ### 5.2 Determinism (DET)
 

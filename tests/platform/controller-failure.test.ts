@@ -86,6 +86,8 @@ describe('a failure after earlier cycles of the same call (DR-074)', () => {
     const { controller, calls } = loadedHarness({ script: FOREIGN_ON_THIRD });
     const update = must(controller.stepInstruction());
     expect(update.snapshot.lastFault?.code).toBe('PLT-INTERNAL');
+    // The cause is the namespace rule and not some other internal error (EVT-06).
+    expect(update.snapshot.lastFault?.message).toContain('PLT-EVENT-NAMESPACE');
     expect(update.snapshot.cycle).toBe(2);
     expect(update.cyclesCompleted).toBe(2);
     expect(update.events.some((e) => e.kind === 'other-arch/custom')).toBe(false);

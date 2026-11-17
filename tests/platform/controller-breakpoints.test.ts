@@ -1,7 +1,15 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import type { ExecutionController } from '../../src/platform';
+import { createArchitectureRegistry, createController } from '../../src/platform';
+import type { CpuArchitecture, ExecutionController, ProgramImage } from '../../src/platform';
+import { createFixtureArchitecture, defaultScript } from './fixtures/fixture-architecture';
 import type { FixtureCycle } from './fixtures/fixture-architecture';
-import { codeOf, fixtureImage, loadedHarness, must } from './helpers/controller-harness';
+import {
+  FIXTURE_ID,
+  codeOf,
+  fixtureImage,
+  loadedHarness,
+  must,
+} from './helpers/controller-harness';
 
 // Slice 1.4-e: breakpoints (MODULE_CONTRACTS §2.4.4; DR-027, DR-076).
 // In the default script the program counter is 0, then 1 after cycle 4, 3 after cycle 7,
@@ -213,6 +221,46 @@ describe('the architecture never receives breakpoint data (BRK-06)', () => {
     expect(calls.argumentCounts.length).toBeGreaterThan(10);
     for (const [method, count] of calls.argumentCounts) {
       expect(count).toBe(method === 'loadProgram' ? 1 : 0);
+    }
+  });
+});
+
+describe('the architecture never receives breakpoint data (BRK-06, inputs)', () => {
+  it('the program image handed to loadProgram has exactly the ProgramImage fields', () => {
+    const fixture = createFixtureArchitecture({
+      architectureId: FIXTURE_ID,
+      script: defaultScript(FIXTURE_ID),
+    });
+    const received: ProgramImage[] = [];
+    const spy: CpuArchitecture = {
+      descriptor: fixture.descriptor,
+      visualization: fixture.visualization,
+      createInstance: () => {
+        const instance = fixture.createInstance();
+        return {
+          ...instance,
+          loadProgram: (image: ProgramImage) => {
+            received.push(image);
+            return instance.loadProgram(image);
+          },
+        };
+      },
+    };
+    const registry = must(createArchitectureRegistry([spy]));
+    const controller = must(
+      createController({ registry, architectureId: FIXTURE_ID, historyLimit: 100 }),
+    );
+    must(controller.setBreakpoints([1, 3]));
+    must(controller.load(fixtureImage()));
+    must(controller.setBreakpoints([4]));
+    controller.reset();
+
+    expect(received.length).toBeGreaterThan(0);
+    for (const image of received) {
+      expect(Object.keys(image).sort()).toEqual(
+        ['architectureId', 'bytes', 'entry', 'origin', 'sourceMap', 'symbols'].sort(),
+      );
+      expect(image).toEqual(fixtureImage());
     }
   });
 });
