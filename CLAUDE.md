@@ -11,8 +11,8 @@ Product definition: `docs/product/PRODUCT_SPEC.md`, `MVP_SCOPE.md`, `RELEASE_ROA
 ## 2. Where the Project Is
 
 - **Release:** v1.0, BITSHIFT-8 simulator. Only v1.0 is authorised for planning and implementation. v2.0 to v4.0 are directions only.
-- **Phase:** Phase 1 (simulation platform backbone), in progress. Phase 0 is complete. Slice status and the next batch: `docs/engineering/PHASE_1_EXECUTION_PLAN.md` §10.
-- **Application code:** `src/platform/` is being built slice by slice. `src/app/` holds the placeholder shell. The other `src/` directories are empty by design. Do not write code for a phase that has not started.
+- **Phase:** Phase 1 (simulation platform backbone) is complete in the repository and awaits product-owner acceptance. Exit record: `docs/engineering/PHASE_1_EXECUTION_PLAN.md` Appendix A. **Phase 2 has not started** and is blocked by DR-001 to DR-018.
+- **Application code:** `src/platform/` holds the finished platform. `src/app/` holds the placeholder shell. The other `src/` directories are empty by design. Do not write code for a phase that has not started.
 
 ## 3. Hierarchy and Workflow
 

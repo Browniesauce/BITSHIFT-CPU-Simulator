@@ -159,3 +159,68 @@ describe('language rules (CODING_STANDARDS section 2)', () => {
     expect(await firedRules('src/platform/x.ts', code)).toEqual([]);
   });
 });
+
+describe('test code never ships (src/ must not import tests/)', () => {
+  const testImport =
+    "import { fixtureArchitecture } from '../../tests/platform/fixtures/fixture-architecture';";
+
+  const forbidden: Array<[string, string, string]> = [
+    ['platform imports a test fixture', 'src/platform/x.ts', testImport],
+    ['the app layer imports a test fixture', 'src/app/x.ts', testImport],
+    ['features import a test fixture', 'src/features/x.ts', testImport],
+    [
+      'a deeply nested src file imports a test fixture',
+      'src/features/panels/deep/x.ts',
+      "import '../../../../tests/platform/fixtures/fixture-architecture';",
+    ],
+    [
+      'the assembler imports a test fixture',
+      'src/assembler/x.ts',
+      "import '../../tests/platform/fixtures/fixture-architecture';",
+    ],
+  ];
+
+  it.each(forbidden)('rejects: %s', async (_name, filePath, code) => {
+    expect(await firedRules(filePath, code)).toContain(RESTRICTED_IMPORT);
+  });
+
+  const allowed: Array<[string, string, string]> = [
+    ['the app layer imports the platform', 'src/app/x.ts', "import '../platform';"],
+    [
+      'the app layer imports an architecture',
+      'src/app/x.ts',
+      "import '../architectures/bitshift-8';",
+    ],
+    ['the app layer imports the assembler', 'src/app/x.ts', "import '../assembler';"],
+    [
+      'platform imports a sibling name that contains "tests"',
+      'src/platform/x.ts',
+      "import './tests-helper';",
+    ],
+    [
+      'platform imports a file whose name contains "attests"',
+      'src/platform/x.ts',
+      "import './attests';",
+    ],
+    [
+      'platform imports a path segment that contains "attests"',
+      'src/platform/x.ts',
+      "import '../platform/attests';",
+    ],
+    [
+      'app imports a file whose name contains "contests"',
+      'src/app/x.ts',
+      "import './contests/index';",
+    ],
+  ];
+
+  it.each(allowed)('allows: %s', async (_name, filePath, code) => {
+    expect(await firedRules(filePath, code)).not.toContain(RESTRICTED_IMPORT);
+  });
+
+  it('does not apply the tests/ rule to test files themselves', async () => {
+    expect(await firedRules('tests/platform/x.test.ts', testImport)).not.toContain(
+      RESTRICTED_IMPORT,
+    );
+  });
+});

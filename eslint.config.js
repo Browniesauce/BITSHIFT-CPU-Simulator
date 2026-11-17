@@ -12,6 +12,12 @@ const BOUNDARY_MESSAGE =
 /** Matches an import of a top-level `src/` directory, relative or nested. */
 const dir = (name) => [`**/${name}`, `**/${name}/**`];
 
+/** Test code never ships: no file under src/ may import from the repository's tests/ directory. */
+const TEST_IMPORTS = {
+  group: ['**/tests', '**/tests/**'],
+  message: 'src/ must not import from tests/ (test code never ships).',
+};
+
 const REACT = ['react', 'react/*', 'react-dom', 'react-dom/*'];
 const UI_LIBRARIES = [
   ...REACT,
@@ -28,7 +34,7 @@ const UI_LIBRARIES = [
  * One rule per directory: a later config block replaces, rather than merges, the options.
  */
 function restrictImports({ blockedDirs, blockedPackages = [] }) {
-  const patterns = [];
+  const patterns = [{ ...TEST_IMPORTS, group: [...TEST_IMPORTS.group] }];
   if (blockedDirs.length > 0) {
     patterns.push({ group: blockedDirs.flatMap(dir), message: BOUNDARY_MESSAGE });
   }
@@ -44,6 +50,13 @@ function restrictImports({ blockedDirs, blockedPackages = [] }) {
 
 /** Directories of `src/` and what each one may not import (CODING_STANDARDS section 4.1). */
 const BOUNDARIES = [
+  {
+    // Catch-all for any src/ directory or file not listed below. Adds no directory restriction,
+    // only the tests/ rule. The more specific blocks below replace this rule for their files, and
+    // each of them also carries the tests/ rule through restrictImports().
+    files: ['src/**'],
+    blockedDirs: [],
+  },
   {
     files: ['src/platform/**'],
     blockedDirs: [
@@ -83,6 +96,12 @@ const BOUNDARIES = [
   {
     files: ['src/features/**', 'src/components/**'],
     blockedDirs: ['architectures', 'assembler', 'app'],
+  },
+  {
+    // The composition root wires concrete architectures and the assembler (DR-057). It may
+    // import them; only the tests/ rule applies here.
+    files: ['src/app/**'],
+    blockedDirs: [],
   },
 ];
 
